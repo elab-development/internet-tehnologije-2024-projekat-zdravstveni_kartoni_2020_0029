@@ -1,0 +1,29 @@
+import { createBrowserRouter } from 'react-router-dom';
+import App from '../App';
+import Login from '../pages/Login';
+import Register from '../pages/Register';
+import Dashboard from '../pages/Dashboard';
+//import About from '../pages/About'; // create this file if it doesn't exist
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <App />,
+  },
+  {
+    path: '/login',
+    element: <Login />,
+  },
+  {
+    path: '/register',
+    element: <Register />,
+  },
+  {
+    path: '/dashboard',
+    element: <Dashboard />,
+  },
+  // {
+  //   path: '/about',
+  //   element: <About />,
+  // },
+]);
