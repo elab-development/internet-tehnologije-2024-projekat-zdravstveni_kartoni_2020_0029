@@ -5,18 +5,17 @@ import {
   Paper,
   Divider,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  Link,
   IconButton,
   Stack
 } from '@mui/material'
 import { Edit, Delete, Add, Menu } from '@mui/icons-material'
 
-const LeftSidebar = ({user}) => {
+type Props = {
+  onSelect: (component: string) => void;
+}
+
+const LeftSidebar = ({user, activeView, onSelect}) => {
   return (
       <Paper 
         elevation={3} 
@@ -62,8 +61,9 @@ const LeftSidebar = ({user}) => {
         <Stack spacing={1} sx={{ mb: 3 }}>
           <Button 
             fullWidth
-            variant="contained"
-            //component={InertiaLink} 
+            variant={activeView === 'dashboard' ? 'contained' : 'outlined'}
+            component={Link}
+            onClick={() => onSelect('dashboard')}
             href="#"
             sx={{ justifyContent: 'flex-start' }}
           >
@@ -71,29 +71,31 @@ const LeftSidebar = ({user}) => {
           </Button>
           <Button 
             fullWidth
-            variant="outlined"
-            //component={InertiaLink} 
+            variant={activeView === 'patients' ? 'contained' : 'outlined'}
+            component={Link} 
+            onClick={() => onSelect('patients')}
             href="#"
             sx={{ justifyContent: 'flex-start' }}
           >
             Patients
           </Button>
-          <Button 
+          {/* <Button 
             fullWidth
-            variant="outlined"
-            //component={InertiaLink} 
+            variant={activeView === 'RecordInfo' ? 'contained' : 'outlined'}
+            component={Link} 
+            onClick={() => onSelect('RecordInfo')}
             href="#"
             sx={{ justifyContent: 'flex-start' }}
           >
             Appointments
-          </Button>
+          </Button> */}
         </Stack>
         
         <Box sx={{ mt: 'auto' }}>
           <Button 
             fullWidth
             variant="outlined"
-            //component={InertiaLink} 
+            component={Link} 
             href="#"
           >
             Settings

@@ -1,13 +1,21 @@
 import React from 'react';
 import {
-  Box, Table, TableBody, TableCell, TableContainer,
+  Typography, Box, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, IconButton, Chip
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddButton from './AddButton';
 
-const PatientTable = ({ records, onEdit, onDelete }) => {
+const PatientTable = ({ records}) => {
   return (
+    <>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Typography variant="h4">Patient Records</Typography>
+          <AddButton
+            text="New Record"
+          />
+        </Box>
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
@@ -43,10 +51,14 @@ const PatientTable = ({ records, onEdit, onDelete }) => {
                 </Box>
               </TableCell>
               <TableCell align="right">
-                <IconButton onClick={() => onEdit(record)}>
+                <IconButton 
+                //onClick={() => onEdit(record)}
+                >
                   <EditIcon sx={{ color: '#1976d2' }} />
                 </IconButton>
-                <IconButton onClick={() => onDelete(record.id)}>
+                <IconButton 
+                //onClick={() => onDelete(record.id)}
+                >
                   <DeleteIcon sx={{ color: '#d32f2f' }} />
                 </IconButton>
               </TableCell>
@@ -55,6 +67,7 @@ const PatientTable = ({ records, onEdit, onDelete }) => {
         </TableBody>
       </Table>
     </TableContainer>
+    </>
   );
 };
 

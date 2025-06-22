@@ -3,15 +3,12 @@ import App from '../App';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard';
+import RecordInfo from '../components/RecordInfo';
 //import About from '../pages/About'; // create this file if it doesn't exist
 
 export const router = createBrowserRouter([
-  {
+{
     path: '/',
-    element: <App />,
-  },
-  {
-    path: '/login',
     element: <Login />,
   },
   {
@@ -22,8 +19,4 @@ export const router = createBrowserRouter([
     path: '/dashboard',
     element: <Dashboard />,
   },
-  // {
-  //   path: '/about',
-  //   element: <About />,
-  // },
 ]);

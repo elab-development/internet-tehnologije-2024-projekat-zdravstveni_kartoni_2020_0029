@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { 
   Box, 
   Typography,
@@ -15,9 +16,10 @@ import {
   Stack
 } from '@mui/material'
 import { Edit, Delete, Add, Menu } from '@mui/icons-material'
-import PatientTable from '../components/recordinfo'
+import PatientTable from '../components/RecordInfo'
 import AddButton from '../components/AddButton'
 import LeftSidebar from '../components/LeftSidebar'
+import Patients from '../components/Patients'
 
 export default function Dashboard() {
   // Mock data
@@ -34,34 +36,39 @@ export default function Dashboard() {
     { id: 3, patient: 'Carol Williams', date: '2023-07-10', diagnosis: 'Migraine', status: 'Pending' }
   ]
 
+  const [activeView, setActiveView] = useState('dashboard');
+
+  const renderContent = () => {
+    switch (activeView) {
+      case 'dashboard':
+        return <PatientTable records={patientRecords}/>;
+      case 'patients':
+        return <Patients />;
+      default:
+        return <div>Select a section</div>;
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       {/* <Head title="Dashboard" /> */}
       {/* Left Sidebar */}
       <LeftSidebar
         user={user}
-      />
-      
-      
+        onSelect={setActiveView}
+        activeView={activeView}
+      />      
       {/* Main Content - Patient Records */}
       <Box sx={{ flexGrow: 1, p: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Typography variant="h4">Patient Records</Typography>
-          {/* <Button 
-            variant="contained" 
-            startIcon={<Add />}
-            //component={InertiaLink} 
-            href="#"
-          >
-            New Record
-          </Button> */}
           <AddButton
             text="New Record"
           />
+        </Box> */}
+         <Box flex={1} p={3}>
+          {renderContent()}
         </Box>
-        <PatientTable 
-        records={patientRecords}
-        />
       </Box>
     </Box>
   )
