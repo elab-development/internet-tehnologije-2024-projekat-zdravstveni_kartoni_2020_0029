@@ -7,8 +7,12 @@ import RecordInfo from '../components/RecordInfo';
 //import About from '../pages/About'; // create this file if it doesn't exist
 
 export const router = createBrowserRouter([
-{
+  {
     path: '/',
+    element: <Login />,
+  },
+  {
+    path: '/login',
     element: <Login />,
   },
   {

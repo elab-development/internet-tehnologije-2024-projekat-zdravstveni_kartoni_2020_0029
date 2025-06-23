@@ -1,13 +1,13 @@
 import {Button} from '@mui/material'
 import {Add} from '@mui/icons-material'
 
-export default function AddButton({ text}) {
+export default function AddButton({ text, link}) {
     return (
         <Button 
             variant="contained" 
             startIcon={<Add />}
             //component={InertiaLink} 
-            href="#"
+            href={link}
             //onClick={onClick}
           >
             {text}

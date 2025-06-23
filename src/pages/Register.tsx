@@ -5,28 +5,42 @@ import {
   Typography, 
   Container,
   Link as MuiLink,
-  Alert
+  Autocomplete,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  FormLabel
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+
+
+  const bloodGroups = [
+    'A+',
+    'A-',
+    'B+',
+    'B-',
+    'AB+',
+    'AB-',
+    'O+',
+    'O-',
+  ];
 
 export default function Register() {
-  // const { data, setData, post, processing, errors, reset } = useForm({
-  //   name: '',
-  //   surname: '',
-  //   email: '',
-  //   password: '',
-  //   password_confirmation: '',
-  // })
-
-  // const handleSubmit = (e) => {
-  //   e.preventDefault()
-  //   post('/register', {
-  //     onSuccess: () => reset('password', 'password_confirmation'),
-  //   })
-  // }
   const navigate = useNavigate();
 
+  const [gender, setGender] = useState('male');
+
+  const [dob, setDob] = useState<Date | null>(null);
+
+
+
   return (
+    
     <Container component="main" maxWidth="xs">
       {/* <Head title="Register" /> */}
       
@@ -43,7 +57,7 @@ export default function Register() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          mt: 3
+          mt: 0
         }}
       >
         <Typography component="h1" variant="h5" sx={{ mb: 2 }}>
@@ -133,6 +147,82 @@ export default function Register() {
             // error={!!errors.password_confirmation}
             // helperText={errors.password_confirmation}
           />
+
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="jmbg"
+            label="JMBG"
+            id="new-jmbg"
+            // value={data.password_confirmation}
+            // onChange={(e) => setData('password_confirmation', e.target.value)}
+            // error={!!errors.password_confirmation}
+            // helperText={errors.password_confirmation}
+          />
+
+          <Box sx={{ mt: 2 }}>
+          <Autocomplete
+            id="new-blood_group"
+            options={bloodGroups}
+            renderInput={(params) => <TextField {...params} label="Blood Group" />}
+          />
+          </Box>
+
+         <FormControl fullWidth
+         sx={{ mt: 3 }}>
+          <FormLabel 
+            sx={{ 
+              position: 'absolute', 
+              top: '-10px', 
+              left: 12, 
+              backgroundColor: 'white', 
+              px: 0.5, 
+              color: 'text.secondary',
+              fontSize: '0.9rem',
+            }}
+          >
+            Gender *
+          </FormLabel>
+          <Box 
+             sx={{
+                border: '1px solid',
+                borderColor: 'rgba(0, 0, 0, 0.2)', 
+                borderRadius: '4px',             
+                padding: '8px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+            <RadioGroup
+              row
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              sx={{ mt: 0, alignItems: 'center' }}
+            >
+              <FormControlLabel value="male" control={<Radio />} label="Male" sx={{ color: 'text.secondary' }} />
+              <FormControlLabel value="female" control={<Radio />} label="Female" sx={{ color: 'text.secondary' }}/>
+            </RadioGroup>
+          </Box>
+        </FormControl>
+
+          <Box sx={{ mt: 3, color: 'text.secondary' }}>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <DatePicker
+            label="Date of Birth"
+            value={dob}
+            onChange={(newValue: Date | null) => setDob(newValue)}
+            disableFuture
+            openTo="year"
+            views={['year', 'month', 'day']}
+            slotProps={{
+              textField: {
+                fullWidth: true,
+              },
+            }}
+          />
+        </LocalizationProvider>
+        </Box>
 
           <Button
             type="submit"

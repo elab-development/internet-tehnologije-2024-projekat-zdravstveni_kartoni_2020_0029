@@ -6,23 +6,16 @@ export default function LoginForm() {
   return ( 
     <>
       {/* <Head title="Login" /> */}
-      <Box 
+      <Box
+        height="100vh"
         component="form" 
         //onSubmit={handleSubmit} 
-        sx={{ mt: 3 }} 
-        display="flex" 
+        sx={{backgroundColor: '#f5f5f5' }} 
+        display="flex"
         justifyContent="center" 
         alignItems="center" 
-        minHeight="100vh"
       >
         <Paper elevation={3} sx={{ p: 4, width: 300 }}>
-          <Box sx={{ 
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '10vh',
-            textAlign: 'center'
-          }}>
             <Typography 
               variant="h4"
               component="h1"
@@ -32,12 +25,12 @@ export default function LoginForm() {
                 fontWeight: 'bold',
                 color: 'primary.main',
                 textTransform: 'uppercase',
-                letterSpacing: '1px'
+                letterSpacing: '1px',
+                mb: 2,
               }}
             >
               Login form
             </Typography>
-          </Box>
           
           <TextField 
             label="Email" 
@@ -47,7 +40,7 @@ export default function LoginForm() {
             //onChange={e => setData('email', e.target.value)}
             //error={!!errors.email}
             //helperText={errors.email}
-            autoComplete="username"
+            //autoComplete="username"
           />
           
           <TextField 
@@ -59,7 +52,7 @@ export default function LoginForm() {
             //onChange={e => setData('password', e.target.value)}
             //error={!!errors.password}
             //helperText={errors.password}
-            autoComplete="current-password"
+            //autoComplete="current-password"
           />
           
           {/* {errors.message && (
@@ -83,18 +76,22 @@ export default function LoginForm() {
           <Box sx={{ 
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '10vh',
-            textAlign: 'center'
+            mt: 2,
           }}>
             <MuiLink
               //component={Link}
               href="/register"
               color="primary"
               underline="hover"
-              sx={{ mx: 1 }}
+              sx={{ 
+                textDecoration: 'none', 
+                '&:hover': { textDecoration: 'underline' },
+                userSelect: 'none',     // prevent text selection
+                cursor: 'pointer',      // show hand cursor
+                outline: 'none', 
+              }}
             >
-              Register
+              Register as patient
             </MuiLink>
           </Box>
         </Paper>

@@ -8,14 +8,14 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddButton from './AddButton';
 import {useNavigate} from 'react-router-dom'
 
-const PatientTable = ({ records}) => {
+const Patients = ({ patients}) => {
   return (
     <>
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4,  userSelect: 'none' }}>
-          <Typography variant="h4">Patient Records</Typography>
+          <Typography variant="h4">Patient patients</Typography>
           <AddButton
-            text="New Record"
-            link="#"
+            text="New patient"
+            link="/register"
           />
         </Box>
     <TableContainer component={Paper}
@@ -27,44 +27,31 @@ const PatientTable = ({ records}) => {
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>Patient</TableCell>
-            <TableCell>Date</TableCell>
-            <TableCell>Diagnosis</TableCell>
-            <TableCell>Status</TableCell>
+            <TableCell>Name</TableCell>
+            <TableCell>Age</TableCell>
+            <TableCell>JMBG</TableCell>
+            <TableCell>Blood Group</TableCell>
+            <TableCell>Gender</TableCell>
             <TableCell align="right">Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {records.map((record) => (
-            <TableRow key={record.id} hover>
-              <TableCell>{record.patient}</TableCell>
-              <TableCell>{record.date}</TableCell>
-              <TableCell>{record.diagnosis}</TableCell>
-              <TableCell>
-                <Box 
-                      sx={{
-                        display: 'inline-block',
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: 1,
-                        backgroundColor: 
-                          record.status === 'Completed' ? 'success.light' :
-                          record.status === 'In Treatment' ? 'warning.light' :
-                          'error.light',
-                        color: 'common.white'
-                      }}
-                    >
-                      {record.status}
-                </Box>
+          {patients.map((patient) => (
+            <TableRow key={patient.id} hover>
+              <TableCell>{patient.name}</TableCell>
+              <TableCell>{patient.age}</TableCell>
+              <TableCell>{patient.jmbg}</TableCell>
+              <TableCell>{patient.blood_group}</TableCell>
+              <TableCell>{patient.gender}
               </TableCell>
               <TableCell align="right">
                 <IconButton 
-                //onClick={() => onEdit(record)}
+                //onClick={() => onEdit(patient)}
                 >
                   <EditIcon sx={{ color: '#1976d2' }} />
                 </IconButton>
                 <IconButton 
-                //onClick={() => onDelete(record.id)}
+                //onClick={() => onDelete(patient.id)}
                 >
                   <DeleteIcon sx={{ color: '#d32f2f' }} />
                 </IconButton>
@@ -78,5 +65,5 @@ const PatientTable = ({ records}) => {
   );
 };
 
-export default PatientTable;
+export default Patients;
 

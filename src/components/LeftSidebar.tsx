@@ -10,12 +10,14 @@ import {
   Stack
 } from '@mui/material'
 import { Edit, Delete, Add, Menu } from '@mui/icons-material'
+import {useNavigate} from 'react-router-dom'
 
 type Props = {
   onSelect: (component: string) => void;
 }
 
 const LeftSidebar = ({user, activeView, onSelect}) => {
+  const navigate = useNavigate()
   return (
       <Paper 
         elevation={3} 
@@ -25,13 +27,16 @@ const LeftSidebar = ({user, activeView, onSelect}) => {
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 0,
-          minHeight: '100vh'
+          height: '100vh',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+          userSelect: 'none' 
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <IconButton sx={{ mr: 1 }}>
+          {/* <IconButton sx={{ mr: 1 }}>
             <Menu />
-          </IconButton>
+          </IconButton> */}
           <Typography variant="h6">Medical Portal</Typography>
         </Box>
         
@@ -95,10 +100,11 @@ const LeftSidebar = ({user, activeView, onSelect}) => {
           <Button 
             fullWidth
             variant="outlined"
+            onClick={() => navigate('/login')}
             component={Link} 
             href="#"
           >
-            Settings
+            Log out
           </Button>
         </Box>
       </Paper>

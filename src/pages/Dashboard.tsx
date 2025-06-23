@@ -19,7 +19,7 @@ import { Edit, Delete, Add, Menu } from '@mui/icons-material'
 import PatientTable from '../components/RecordInfo'
 import AddButton from '../components/AddButton'
 import LeftSidebar from '../components/LeftSidebar'
-import Patients from '../components/Patients'
+import Patients from '../components/PatientsInfo'
 
 export default function Dashboard() {
   // Mock data
@@ -36,6 +36,13 @@ export default function Dashboard() {
     { id: 3, patient: 'Carol Williams', date: '2023-07-10', diagnosis: 'Migraine', status: 'Pending' }
   ]
 
+  const patients = [
+    { id: 1, name: 'Alice Smith', age: 25, jmbg: '1234567890123', blood_group: 'A+', gender: 'Female' },
+    { id: 2, name: 'Bob Johnson', age: 30, jmbg: '9876543210987', blood_group: 'B-', gender: 'Male' },
+    { id: 3, name: 'Carol Williams', age: 28, jmbg: '5678901234567', blood_group: 'AB+', gender: 'Female' },
+    { id: 4, name: 'David Brown', age: 35, jmbg: '3456789012345', blood_group: 'O-', gender: 'Male' }
+  ]
+
   const [activeView, setActiveView] = useState('dashboard');
 
   const renderContent = () => {
@@ -43,14 +50,14 @@ export default function Dashboard() {
       case 'dashboard':
         return <PatientTable records={patientRecords}/>;
       case 'patients':
-        return <Patients />;
+        return <Patients patients={patients}/>;
       default:
         return <div>Select a section</div>;
     }
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', height: '100vh' }}>
       {/* <Head title="Dashboard" /> */}
       {/* Left Sidebar */}
       <LeftSidebar
