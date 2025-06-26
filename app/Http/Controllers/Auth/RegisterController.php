@@ -8,8 +8,11 @@ use App\Models\Patient;
 use App\Models\Doctor;
 use App\Models\MedicalRecord;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use App\Enums\UserRole;
 use App\Enums\BloodType;    
 use App\Enums\Gender;
@@ -67,28 +70,50 @@ class RegisterController extends Controller
                 'allergies' => $request->allergies ?? null,
                 'chronic_diseases' => $request->chronic_diseases ?? null,
             ]);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Patient registered successfully',
-                'user' => $user,
-                'patient' => $patient,
-                'medical_record' => $medicalRecord
-            ], 201);
         } else {
             $doctor = Doctor::create([
                 'user_id' => $user->id,
                 'specialization' => $request->specialization,
                 'description' => $request->description ?? null,
             ]);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Doctor registered successfully',
-                'user' => $user,
-                'doctor' => $doctor
-            ], 201);
         }
+
+        // Logovanje korisnika i generisanje tokena
+        Auth::login($user);
+        $token = $this->createAuthToken($user);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'user' => $user->only(['id', 'name', 'email', 'role']),
+                'token' => $token,
+                'redirect_to' => $this->getDashboardRoute($user->role),
+                'expires_in' => 28800 // 8 sati u sekundama
+            ]
+        ], 201);
+    }
+
+    protected function createAuthToken($user)
+    {
+        $token = Str::random(60);
+        Cache::put('auth_token_'.$token, [
+            'user_id' => $user->id,
+            'role' => $user->role,
+            'created_at' => now()->toDateTimeString(),
+            'expires_at' => now()->addHours(8)->toDateTimeString()
+        ], now()->addHours(8));
+
+        return $token;
+    }
+
+    protected function getDashboardRoute($role)
+    {
+        return match($role) {
+            UserRole::ADMIN->value => '/admin/dashboard',
+            UserRole::DOCTOR->value => '/doctor/dashboard',
+            UserRole::PATIENT->value => '/patient/dashboard',
+            default => '/home',
+        };
     }
 
     // Metoda za dobavljanje doktora (korisno za frontend)
