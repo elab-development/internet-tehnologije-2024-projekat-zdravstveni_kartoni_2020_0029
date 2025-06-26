@@ -13,17 +13,8 @@ enum BloodType: string
     case O_POSITIVE = 'O+';
     case O_NEGATIVE = 'O-';
 
-    public function label(): string
+    public static function values(): array
     {
-        return match($this) {
-            self::A_POSITIVE => 'A+',
-            self::A_NEGATIVE => 'A-',
-            self::B_POSITIVE => 'B+',
-            self::B_NEGATIVE => 'B-',
-            self::AB_POSITIVE => 'AB+',
-            self::AB_NEGATIVE => 'AB-',
-            self::O_POSITIVE => 'O+',
-            self::O_NEGATIVE => 'O-',
-        };
+        return array_column(self::cases(), 'value');
     }
 }

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Enums\BloodType;
 
 return new class extends Migration
 {
@@ -15,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained('doctors')->cascadeOnDelete();
-            $table->string('blood_type');
+            $table->enum('blood_type', BloodType::values());
             $table->json('allergies')->nullable();
             $table->json('chronic_diseases')->nullable();
             $table->date('opening_date');
