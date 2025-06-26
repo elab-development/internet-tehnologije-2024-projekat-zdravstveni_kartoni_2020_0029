@@ -21,5 +21,6 @@ class Kernel extends HttpKernel
         'auth' => \App\Http\Middleware\Authenticate::class,
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         'api.response' => \App\Http\Middleware\ApiResponseMiddleware::class,
+        'verify.token' => \App\Http\Middleware\VerifyApiToken::class,
     ];
 }

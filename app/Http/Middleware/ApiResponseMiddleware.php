@@ -8,24 +8,28 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ApiResponseMiddleware
 {
-    public function handle(Request $request, Closure $next): Response
-    {
-        // Postavi default JSON response
-        $request->headers->set('Accept', 'application/json');
-        
+   public function handle(Request $request, Closure $next): Response
+{
+    $request->headers->set('Accept', 'application/json');
+    
+    try {
         $response = $next($request);
         
-        // Standardizuj odgovore za API
-        if ($request->is('api/*')) {
-            $original = $response->original;
-            
-            return response()->json([
-                'success' => $response->isSuccessful(),
-                'data' => $original['data'] ?? $original,
-                'message' => $original['message'] ?? ($response->isSuccessful() ? 'Success' : 'Error'),
-            ], $response->getStatusCode());
+        // Preskoči za greške
+        if (!$response->isSuccessful()) {
+            return $response;
         }
 
-        return $response;
+        return response()->json([
+            'success' => true,
+            'data' => $response->original,
+        ], $response->getStatusCode());
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
     }
+}
 }
