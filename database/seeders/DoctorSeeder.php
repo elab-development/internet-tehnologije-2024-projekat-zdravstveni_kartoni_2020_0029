@@ -10,26 +10,12 @@ class DoctorSeeder extends Seeder
 {
     public function run()
     {
+        // Doctors are automatically created by UserFactory's configure() method
+        // We just need to ensure their specializations are set
         $users = User::where('role', 'doctor')->get();
-        $specializations = ['Kardiolog', 'Neurolog', 'Hirurg', 'Pedijatar', 'Ortoped'];
-
-        foreach ($users as $index => $user) {
-            Doctor::create([
-                'user_id' => $user->id,
-                'specialization' => $specializations[$index % count($specializations)],
-                'description' => $this->generateDoctorDescription($specializations[$index % count($specializations)]),
-            ]);
+        
+        foreach ($users as $user) {
+            Doctor::factory()->create(['user_id' => $user->id]);
         }
-    }
-
-    private function generateDoctorDescription($specialization)
-    {
-        $descriptions = [
-            'Specijalista sa višegodišnjim iskustvom u oblasti ' . $specialization,
-            'Diplomirani lekar specijalizacije ' . $specialization . ' sa brojnim uspešnim intervencijama',
-            'Isusan stručnjak za ' . $specialization . ', autor više naučnih radova',
-            'Klinika za ' . $specialization . ', član Evropskog udruženja lekara'
-        ];
-        return $descriptions[array_rand($descriptions)];
     }
 }

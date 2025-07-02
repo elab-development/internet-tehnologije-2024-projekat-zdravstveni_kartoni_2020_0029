@@ -3,42 +3,45 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
- */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
-
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'name' => $this->faker->firstName() . ' ' . $this->faker->lastName(),
+            'email' => $this->faker->unique()->safeEmail(),
+            'password' => Hash::make('password'),
+            'role' => $this->faker->randomElement(['admin', 'doctor', 'patient']),
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function configure()
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return $this->afterCreating(function (\App\Models\User $user) {
+            if ($user->role === 'doctor') {
+                \App\Models\Doctor::factory()->create(['user_id' => $user->id]);
+            } elseif ($user->role === 'patient') {
+                \App\Models\Patient::factory()->create(['user_id' => $user->id]);
+            }
+        });
+    }
+
+    public function admin()
+    {
+        return $this->state(fn (array $attributes) => ['role' => 'admin']);
+    }
+
+    public function doctor()
+    {
+        return $this->state(fn (array $attributes) => ['role' => 'doctor']);
+    }
+
+    public function patient()
+    {
+        return $this->state(fn (array $attributes) => ['role' => 'patient']);
     }
 }
