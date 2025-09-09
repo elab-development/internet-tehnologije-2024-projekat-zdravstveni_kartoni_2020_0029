@@ -8,13 +8,22 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Middleware\VerifyApiToken;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\ExaminationController;
+use App\Http\Controllers\AppointmentController;
+
+
+
+Route::get('/appointments/doctor/{doctorId}', [AppointmentController::class, 'byDoctor']);
 
 Route::middleware('api.response')->group(function () {
     // Javne rute
-    Route::post('/login', [LoginController::class, 'login'])->withoutMiddleware(['web']);
+    Route::post('/login', [LoginController::class, 'login'])->withoutMiddleware(['api']);
     Route::post('/register', [RegisterController::class, 'register']);
     
     ;
+    // Route::middleware('auth.token')->group(function () {
+    // Route::get('/me', [AuthController::class, 'me']);  // ⬅️ ova ruta
+    // Route::post('/logout', [AuthController::class, 'logout']); // već koristiš /logout
+    });
     // Zastićene rute
     Route::middleware(VerifyApiToken::class)->group(function () {
         Route::post('/logout', [LogoutController::class, 'logout']);
@@ -34,6 +43,7 @@ Route::middleware('api.response')->group(function () {
         Route::post('/examinations', [ExaminationController::class, 'store']);
         Route::get('/examinations', [ExaminationController::class, 'index']);
         Route::put('/examinations/{id}', [ExaminationController::class, 'update']);
+        Route::get('/appointments/doctor/{doctorId}', [AppointmentController::class, 'byDoctor']);
 
-        });
+
 });

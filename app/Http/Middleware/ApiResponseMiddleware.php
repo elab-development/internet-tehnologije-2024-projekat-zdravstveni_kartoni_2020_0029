@@ -22,7 +22,8 @@ class ApiResponseMiddleware
 
         return response()->json([
             'success' => true,
-            'data' => $response->original,
+            'data' => 
+            $response->original,
         ], $response->getStatusCode());
         
     } catch (\Exception $e) {

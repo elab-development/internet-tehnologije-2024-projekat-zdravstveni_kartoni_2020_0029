@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Globalni middleware
         $middleware->append([
             \App\Http\Middleware\ApiResponseMiddleware::class,
+            \Illuminate\Http\Middleware\HandleCors::class
         ]);
 
         // API middleware grupa
@@ -30,7 +31,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'api.response' => \App\Http\Middleware\ApiResponseMiddleware::class,
             'auth.token' => \App\Http\Middleware\VerifyApiToken::class,
+            'cors', \Illuminate\Http\Middleware\HandleCors::class
         ]);
+    // Dodaj CORS middleware u globalni middleware stack
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // API error handling

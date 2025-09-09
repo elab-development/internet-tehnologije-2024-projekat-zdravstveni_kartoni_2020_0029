@@ -30,13 +30,11 @@ class LoginController extends Controller
         $token = $this->createAuthToken($user);
 
         return response()->json([
-            'success' => true,
-            'data' => [
                 'user' => $user->only(['id', 'name', 'email', 'role']),
                 'token' => $token,
                 'redirect_to' => $this->getDashboardRoute($user->role),
                 'expires_in' => 28800 // 8 sati u sekundama
-            ]
+            
         ]);
     }
 

@@ -44,7 +44,7 @@ class MedicalRecordController extends Controller
             ], 404);
         }
 
-        // Provera pristupa
+        //Provera pristupa
         if ($user->isPatient()) {
             $patient = $user->patientProfile;
             if ($medicalRecord->patient_id !== $patient->id) {
