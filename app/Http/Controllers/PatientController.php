@@ -19,10 +19,7 @@ class PatientController extends Controller
         if ($user->isAdmin()) {
             $patients = Patient::with('user', 'medicalRecord.doctor.user')->get();
             
-            return response()->json([
-                'success' => true,
-                'data' => $patients
-            ]);
+            return $patients;
         }
         
         if ($user->isDoctor()) {
@@ -31,10 +28,8 @@ class PatientController extends Controller
                 $query->where('doctor_id', $doctor->id);
             })->with('user', 'medicalRecord')->get();
             
-            return response()->json([
-                'success' => true,
-                'data' => $patients
-            ]);
+            return $patients;
+
         }
         
         return response()->json([
@@ -75,55 +70,61 @@ class PatientController extends Controller
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $patient
-        ]);
+        return $patient;
     }
 
     // Kreiranje novog pacijenta (samo admin)
-    public function store(Request $request)
+   public function store(Request $request)
     {
-        $user = Auth::user();
-        
-        if (!$user->isAdmin()) {
+        $authUser = Auth::user();
+
+        // dozvoljeno samo adminu i doktoru
+        if (!$authUser || !in_array($authUser->role, ['admin', 'doctor'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Samo administrator može kreirati pacijente'
+                'message' => 'Samo administrator ili doktor mogu kreirati pacijente'
             ], 403);
         }
 
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
-            'jmbg' => 'required|string|size:13|unique:patients,jmbg',
+            'name'          => 'required|string|max:255',
+            'email'         => 'required|email|unique:users,email',
+            'password'      => 'required|string|min:8',
+            'jmbg'          => 'required|string|size:13|unique:patients,jmbg',
             'date_of_birth' => 'required|date',
-            'gender' => 'required|in:male,female,other',
+            'gender'        => 'required|in:male,female,other',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors()
             ], 422);
         }
 
-        // Kreiranje korisnika
-        $userData = $request->only(['name', 'email', 'password']);
-        $userData['role'] = User::ROLE['PATIENT'];
-        $user = User::create($userData);
+        // 1. Kreiraj User-a sa ulogom pacijenta
+        $user = \App\Models\User::create([
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => bcrypt($request->password),
+            'role'     => 'patient',
+        ]);
 
-        // Kreiranje pacijenta
-        $patientData = $request->only(['jmbg', 'date_of_birth', 'gender']);
-        $patientData['user_id'] = $user->id;
-        $patient = Patient::create($patientData);
+        // 2. Kreiraj Pacijenta vezanog za user-a
+        $patient = \App\Models\Patient::create([
+            'user_id'      => $user->id,
+            'jmbg'         => $request->jmbg,
+            'date_of_birth'=> $request->date_of_birth,
+            'gender'       => $request->gender,
+        ]);
 
         return response()->json([
             'success' => true,
-            'data' => $patient->load('user')
+            'data'    => $patient->load('user'),
+            'message' => 'Pacijent uspešno kreiran'
         ], 201);
     }
+
 
     // Ažuriranje pacijenta
     public function updatePatient(Request $request, $id)
@@ -178,7 +179,7 @@ class PatientController extends Controller
     }
 
     // Brisanje pacijenta (samo admin)
-    public function destroy($id)
+    public function deletePatient($id)
     {
         $patient = Patient::find($id);
         $user = Auth::user();
@@ -225,10 +226,7 @@ class PatientController extends Controller
                 $query->where('doctor_id', $doctorId);
             })->with('user', 'medicalRecord')->get();
             
-            return response()->json([
-                'success' => true,
-                'data' => $patients
-            ]);
+            return $patients;
         }
         
         return response()->json([

@@ -87,19 +87,35 @@ class DoctorController extends Controller
         }
 
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id|unique:doctors,user_id',
+            'name'           => 'required|string|max:255',
+            'email'          => 'required|email|max:255|unique:users,email',
+            'password'       => 'required|string|min:6',
             'specialization' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description'    => 'nullable|string',
         ]);
 
-        $doctor = Doctor::create($validated);
+        // 1. Kreiraj user-a
+        $newUser = \App\Models\User::create([
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
+            'password' => bcrypt($validated['password']), // enkripcija lozinke
+            'role'     => 'doctor',
+        ]);
+
+        // 2. Kreiraj doktora vezanog za user-a
+        $doctor = \App\Models\Doctor::create([
+            'user_id'       => $newUser->id,
+            'specialization'=> $validated['specialization'],
+            'description'   => $validated['description'] ?? null,
+        ]);
 
         return response()->json([
             'success' => true,
-            'data' => $doctor->load('user:id,name,email'),
-            'message' => 'Doktor uspešno kreiran'
+            'data'    => $doctor->load('user:id,name,email,role'),
+            'message' => 'Doktor i korisnik uspešno kreirani'
         ], 201);
     }
+
 
     // Ažuriranje doktora (samo admin ili sam lekar)
     public function updateDoctor(Request $request, $id)
