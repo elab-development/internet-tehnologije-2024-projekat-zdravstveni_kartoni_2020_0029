@@ -72,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
+    
   }
 
   // REFRESH

@@ -10,52 +10,51 @@ import {
   TableRow,
   Paper,
   IconButton,
-  CircularProgress,
-  Alert,
-  Pagination,
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   Button,
+  CircularProgress,
+  Alert,
+  Pagination,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { api } from "../auth/api";
 import { useAuth } from "../auth/useAuth";
-import AddDoctor from "./AddDoctor"; // 👈 tvoja forma za dodavanje doktora
 
 type BackendDoctor = {
   id: number;
   specialization: string;
   description: string;
-  user: {
+  user?: {
     id: number;
     name: string;
     email: string;
   };
 };
 
-const Doctors = () => {
+type Props = {
+  onAddDoctor: () => void;
+};
+
+const Doctors = ({ onAddDoctor }: Props) => {
   const { user } = useAuth();
+
   const [doctors, setDoctors] = useState<BackendDoctor[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [doctorToDelete, setDoctorToDelete] = useState<number | null>(null);
 
+  // pagination state
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // za modal
-  const [openAdd, setOpenAdd] = useState(false);
-
   useEffect(() => {
-    fetchDoctors();
-  }, [page]);
-
-  const fetchDoctors = () => {
     setLoading(true);
-    setError(null);
-
     api
       .get(`/doctors?page=${page}&per_page=8`)
       .then((res) => {
@@ -65,9 +64,9 @@ const Doctors = () => {
           raw = JSON.parse(raw);
         }
 
-        if (raw.success && raw.data?.data) {
+        if (raw.success && Array.isArray(raw.data?.data)) {
           setDoctors(raw.data.data);
-          setTotalPages(raw.data.last_page);
+          setTotalPages(raw.data.last_page || 1);
         } else {
           setError("Nepoznat format odgovora sa servera");
         }
@@ -77,6 +76,24 @@ const Doctors = () => {
         setError("Greška prilikom učitavanja doktora");
       })
       .finally(() => setLoading(false));
+  }, [page]);
+
+  const handleDeleteClick = (doctorId: number) => {
+    setDoctorToDelete(doctorId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (doctorToDelete) {
+      setDoctors((prev) => prev.filter((d) => d.id !== doctorToDelete));
+    }
+    setDeleteDialogOpen(false);
+    setDoctorToDelete(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setDoctorToDelete(null);
   };
 
   if (loading) {
@@ -105,10 +122,9 @@ const Doctors = () => {
       >
         <Typography variant="h4">Doctors</Typography>
 
-        {/* 👇 samo admin vidi dugme */}
-        {user?.role === "admin" && (
-          <Button variant="contained" onClick={() => setOpenAdd(true)}>
-            Add Doctor
+        {(user?.role === "admin" || user?.role === "doctor") && (
+          <Button variant="contained" onClick={onAddDoctor}>
+            New Doctor
           </Button>
         )}
       </Box>
@@ -126,14 +142,14 @@ const Doctors = () => {
           <TableBody>
             {doctors.map((doc) => (
               <TableRow key={doc.id} hover>
-                <TableCell>{doc.user?.name}</TableCell>
-                <TableCell>{doc.user?.email}</TableCell>
+                <TableCell>{doc.user?.name || "N/A"}</TableCell>
+                <TableCell>{doc.user?.email || "N/A"}</TableCell>
                 <TableCell>{doc.specialization}</TableCell>
                 <TableCell align="right">
                   <IconButton>
                     <EditIcon sx={{ color: "#1976d2" }} />
                   </IconButton>
-                  <IconButton>
+                  <IconButton onClick={() => handleDeleteClick(doc.id)}>
                     <DeleteIcon sx={{ color: "#d32f2f" }} />
                   </IconButton>
                 </TableCell>
@@ -154,15 +170,25 @@ const Doctors = () => {
         </Box>
       )}
 
-      {/* Modal sa formom */}
-      <Dialog open={openAdd} onClose={() => setOpenAdd(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Dodaj doktora</DialogTitle>
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">Delete Doctor</DialogTitle>
         <DialogContent>
-          <AddDoctor />
+          <DialogContentText id="delete-dialog-description">
+            Are you sure you want to delete this doctor? This action cannot be undone.
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenAdd(false)} color="error">
-            Zatvori
+          <Button onClick={handleDeleteCancel} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
@@ -171,4 +197,8 @@ const Doctors = () => {
 };
 
 export default Doctors;
+
+
+
+
 

@@ -91,8 +91,8 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
       <Stack spacing={1} sx={{ mb: 3 }}>
         <Button
           fullWidth
-          variant={activeView === "dashboard" ? "contained" : "outlined"}
-          onClick={() => onSelect("dashboard")}
+          variant={activeView === "doctors" ? "contained" : "outlined"}
+          onClick={() => onSelect("doctors")}
           sx={{ justifyContent: "flex-start" }}
         >
           Doctors

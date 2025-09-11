@@ -1,36 +1,27 @@
-import { createBrowserRouter } from "react-router-dom";
-import App from "../App";
-import Login from "../pages/Login";
-import Register from "../pages/Register";
-import Dashboard from "../pages/Dashboard";
-import RecordInfo from "../components/RecordInfo";
-import Patients from "../components/PatientsInfo";   // 👈 lista pacijenata
-import AddPatient from "../components/AddPatient";   // 👈 forma za novog pacijenta
+import { Routes, Route } from "react-router-dom";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";   // ovo je zajednički
+import DoctorDashboard from "./pages/DoctorDashboard"; // posebni
+import PatientDashboard from "./pages/PatientDashboard";
 
-export const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Login />,
-  },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/register",
-    element: <Register />,
-  },
-  {
-    path: "/dashboard",
-    element: <Dashboard />,
-  },
-  {
-    path: "/patients",          // 👈 nova ruta za listu pacijenata
-    element: <Patients />,
-  },
-  {
-    path: "/patients/create",   // 👈 nova ruta za dodavanje pacijenta
-    element: <AddPatient />,
-  },
-]);
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      
+      {/* Admin (koristi tvoj stari Dashboard) */}
+      <Route path="/dashboard" element={<Dashboard />} />
+      
+      {/* Doctor */}
+      <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+
+      {/* Patient */}
+      <Route path="/patient/dashboard" element={<PatientDashboard />} />
+    </Routes>
+  );
+}
+
+export default App;
+
+
 

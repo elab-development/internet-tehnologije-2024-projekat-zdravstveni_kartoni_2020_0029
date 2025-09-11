@@ -22,9 +22,8 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import AddButton from "./AddButton";
 import { api } from "../auth/api";
-import { useAuth } from "../auth/useAuth"; // 👈 import za proveru role
+import { useAuth } from "../auth/useAuth";
 
 type BackendPatient = {
   id: number;
@@ -41,8 +40,12 @@ type BackendPatient = {
   };
 };
 
-const Patients = () => {
-  const { user } = useAuth(); // 👈 dohvatimo korisnika i njegovu rolu
+type Props = {
+  onAddPatient: () => void;
+};
+
+const Patients = ({ onAddPatient }: Props) => {
+  const { user } = useAuth();
 
   const [patients, setPatients] = useState<BackendPatient[]>([]);
   const [loading, setLoading] = useState(false);
@@ -126,9 +129,10 @@ const Patients = () => {
       >
         <Typography variant="h4">Patients</Typography>
 
-        {/* 👇 samo doktor i admin vide dugme */}
         {(user?.role === "admin" || user?.role === "doctor") && (
-          <AddButton text="New patient" link="/patients/create" />
+          <Button variant="contained" onClick={onAddPatient}>
+            New patient
+          </Button>
         )}
       </Box>
 
@@ -164,7 +168,6 @@ const Patients = () => {
         </Table>
       </TableContainer>
 
-      {/* Pagination control */}
       {pageCount > 1 && (
         <Box display="flex" justifyContent="center" mt={3}>
           <Pagination
@@ -203,6 +206,8 @@ const Patients = () => {
 };
 
 export default Patients;
+
+
 
 
 

@@ -1,133 +1,127 @@
 import React, { useState } from "react";
 import {
   Box,
-  Button,
   TextField,
+  Button,
   Typography,
+  MenuItem,
   Paper,
-  CircularProgress,
-  Alert,
 } from "@mui/material";
 import { api } from "../auth/api";
-import { MenuItem } from "@mui/material";
 
-const DoctorForm = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [specialization, setSpecialization] = useState("");
-  const [description, setDescription] = useState("");
+type Props = {
+  onCancel: () => void;
+};
 
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+const AddDoctor = ({ onCancel }: Props) => {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    specialization: "",
+    description: "",
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-    setSuccess(null);
-
-    api
-      .post("/doctors", {
-        name,
-        email,
-        password,
-        specialization,
-        description,
-      })
-      .then((res) => {
-        if (res.data.success) {
-          setSuccess("Doktor uspešno dodat!");
-          setName("");
-          setEmail("");
-          setPassword("");
-          setSpecialization("");
-          setDescription("");
-        } else {
-          setError(res.data.message || "Greška pri dodavanju doktora");
-        }
-      })
-      .catch((err) => {
-        console.error("Greška API:", err);
-        setError("Greška pri dodavanju doktora");
-      })
-      .finally(() => setSubmitting(false));
+    try {
+      const res = await api.post("/doctors", form);
+      console.log("Doctor created:", res.data);
+      onCancel(); // vrati se na listu doktora
+    } catch (err) {
+      console.error("Greška prilikom dodavanja doktora:", err);
+    }
   };
 
   return (
-    <Paper sx={{ p: 4, maxWidth: 600, mx: "auto" }}>
-      <Typography variant="h5" gutterBottom>
-        Dodaj novog doktora
-      </Typography>
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      height="100%"
+    >
+      <Paper sx={{ p: 4, width: "100%", maxWidth: 500 }}>
+        <Typography variant="h5" mb={3}>
+          Add New Doctor
+        </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+        <Box component="form" onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            label="Name"
+            name="name"
+            margin="normal"
+            value={form.name}
+            onChange={handleChange}
+          />
+          <TextField
+            fullWidth
+            label="Email"
+            name="email"
+            margin="normal"
+            value={form.email}
+            onChange={handleChange}
+          />
+          <TextField
+            fullWidth
+            type="password"
+            label="Password"
+            name="password"
+            margin="normal"
+            value={form.password}
+            onChange={handleChange}
+          />
 
-      <form onSubmit={handleSubmit}>
-        <TextField
-          label="Ime i prezime"
-          fullWidth
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          margin="normal"
-          required
-        />
+          {/* Specijalizacija */}
+          <TextField
+            select
+            fullWidth
+            label="Specialization"
+            name="specialization"
+            margin="normal"
+            value={form.specialization}
+            onChange={handleChange}
+          >
+            {["Kardiolog", "Neurolog", "Hirurg", "Pedijatar", "Ortoped"].map(
+              (spec) => (
+                <MenuItem key={spec} value={spec}>
+                  {spec}
+                </MenuItem>
+              )
+            )}
+          </TextField>
 
-        <TextField
-          label="Email"
-          type="email"
-          fullWidth
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          margin="normal"
-          required
-        />
+          <TextField
+            fullWidth
+            label="Description"
+            name="description"
+            margin="normal"
+            multiline
+            rows={3}
+            value={form.description}
+            onChange={handleChange}
+          />
 
-        <TextField
-          label="Lozinka"
-          type="password"
-          fullWidth
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          margin="normal"
-          required
-        />
-
-        <TextField
-        select
-        label="Specijalizacija"
-        fullWidth
-        value={specialization}
-        onChange={(e) => setSpecialization(e.target.value)}
-        margin="normal"
-        required
-        >
-        {["Kardiolog", "Neurolog", "Hirurg", "Pedijatar", "Ortoped"].map((spec) => (
-            <MenuItem key={spec} value={spec}>
-            {spec}
-            </MenuItem>
-        ))}
-        </TextField>
-
-        <TextField
-          label="Opis"
-          fullWidth
-          multiline
-          rows={3}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          margin="normal"
-        />
-
-        <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
-          <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-            {submitting ? <CircularProgress size={24} /> : "Dodaj doktora"}
-          </Button>
+          <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
+            <Button type="submit" variant="contained" fullWidth>
+              Save
+            </Button>
+            <Button variant="outlined" onClick={onCancel} fullWidth>
+              Cancel
+            </Button>
+          </Box>
         </Box>
-      </form>
-    </Paper>
+      </Paper>
+    </Box>
   );
 };
 
-export default DoctorForm;
+export default AddDoctor;
+
+
+
+
