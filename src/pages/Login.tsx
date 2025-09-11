@@ -1,101 +1,119 @@
-import { TextField, Button, Box, Paper, Typography, Link as MuiLink } from '@mui/material';
+import { 
+  TextField, 
+  Button, 
+  Box, 
+  Paper, 
+  Typography, 
+  Link as MuiLink,
+  Alert,
+  CircularProgress
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useAuth } from "../auth/useAuth";
 
 export default function LoginForm() {
-    const navigate = useNavigate();
-  return ( 
-    <>
-      {/* <Head title="Login" /> */}
-      <Box
-        height="100vh"
-        component="form" 
-        //onSubmit={handleSubmit} 
-        sx={{backgroundColor: '#f5f5f5' }} 
-        display="flex"
-        justifyContent="center" 
-        alignItems="center" 
-      >
-        <Paper elevation={3} sx={{ p: 4, width: 300 }}>
-            <Typography 
-              variant="h4"
-              component="h1"
-              sx={{
-                caretColor: 'transparent',
-                userSelect: 'none',
-                fontWeight: 'bold',
-                color: 'primary.main',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                mb: 2,
-              }}
-            >
-              Login form
-            </Typography>
-          
-          <TextField 
-            label="Email" 
-            fullWidth 
-            margin="normal"
-            //value={data.email}
-            //onChange={e => setData('email', e.target.value)}
-            //error={!!errors.email}
-            //helperText={errors.email}
-            //autoComplete="username"
-          />
-          
-          <TextField 
-            label="Password" 
-            type="password" 
-            fullWidth 
-            margin="normal"
-            //value={data.password}
-            //onChange={e => setData('password', e.target.value)}
-            //error={!!errors.password}
-            //helperText={errors.password}
-            //autoComplete="current-password"
-          />
-          
-          {/* {errors.message && (
-            <Typography color="error" sx={{ mt: 1 }}>
-              {errors.message}
-            </Typography>
-          )} */}
-          
-          <Button 
-            type="submit" 
-            onClick={() => navigate('/dashboard')}
-            variant="contained"
-            fullWidth 
-            sx={{ mt: 2 }}
-            //disabled={processing}
+  const [email, setEmail] = useState('admin@klinika.rs');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { loginWithCredentials, loading } = useAuth();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    try {
+      await loginWithCredentials(email, password);
+      // ✅ Redirect sada radi samo AuthProvider (preko response.redirect_to)
+    } catch (err: any) {
+      setError(err.message || 'Došlo je do greške pri prijavi');
+    }
+  };
+
+  return (
+    <Box
+      height="100vh"
+      component="form"
+      onSubmit={handleLogin}
+      sx={{ backgroundColor: '#f5f5f5' }}
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+    >
+      <Paper elevation={3} sx={{ p: 4, width: 350 }}>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            fontWeight: 600,
+            textAlign: 'center',
+            mb: 2
+          }}
+        >
+          Login
+        </Typography>
+
+        {error && (
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 2,
+              '& .MuiAlert-message': {
+                width: '100%'
+              }
+            }}
           >
-           {/* {processing ? 'Logging in...' : 'Login'} */}
-           Login
+            {error}
+          </Alert>
+        )}
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <TextField
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            fullWidth
+            required
+            autoComplete="email"
+          />
+
+          <TextField
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            fullWidth
+            required
+            autoComplete="current-password"
+          />
+
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            disabled={loading}
+            sx={{ py: 1.5 }}
+          >
+            {loading ? <CircularProgress size={24} /> : 'PRIJAVI SE'}
           </Button>
-          
-          <Box sx={{ 
-            display: 'flex',
-            justifyContent: 'center',
-            mt: 2,
-          }}>
+
+          <Box sx={{ textAlign: 'center', mt: 1 }}>
             <MuiLink
-              //component={Link}
-              href="/register"
-              color="primary"
-              underline="hover"
-              sx={{ 
-                textDecoration: 'none', 
+              onClick={() => navigate('/register')}
+              sx={{
+                cursor: 'pointer',
+                textDecoration: 'none',
                 '&:hover': { textDecoration: 'underline' },
-                userSelect: 'none',     // prevent text selection
-                cursor: 'pointer',      // show hand cursor
-                outline: 'none', 
+                userSelect: 'none',
               }}
             >
               Register as patient
             </MuiLink>
           </Box>
-        </Paper>
-      </Box>
-    </>
+        </Box>
+      </Paper>
+    </Box>
   );
 }

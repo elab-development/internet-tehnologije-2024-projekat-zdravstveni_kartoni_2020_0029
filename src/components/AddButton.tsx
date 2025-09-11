@@ -1,7 +1,13 @@
 import {Button} from '@mui/material'
 import {Add} from '@mui/icons-material'
 
-export default function AddButton({ text, link}) {
+type Props = {
+  text: string;
+  link: string;
+};
+
+
+export default function AddButton({text, link}: Props) {
     return (
         <Button 
             variant="contained" 

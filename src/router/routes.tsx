@@ -1,26 +1,36 @@
-import { createBrowserRouter } from 'react-router-dom';
-import App from '../App';
-import Login from '../pages/Login';
-import Register from '../pages/Register';
-import Dashboard from '../pages/Dashboard';
-import RecordInfo from '../components/RecordInfo';
-//import About from '../pages/About'; // create this file if it doesn't exist
+import { createBrowserRouter } from "react-router-dom";
+import App from "../App";
+import Login from "../pages/Login";
+import Register from "../pages/Register";
+import Dashboard from "../pages/Dashboard";
+import RecordInfo from "../components/RecordInfo";
+import Patients from "../components/PatientsInfo";   // 👈 lista pacijenata
+import AddPatient from "../components/AddPatient";   // 👈 forma za novog pacijenta
 
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <Login />,
   },
   {
-    path: '/login',
+    path: "/login",
     element: <Login />,
   },
   {
-    path: '/register',
+    path: "/register",
     element: <Register />,
   },
   {
-    path: '/dashboard',
+    path: "/dashboard",
     element: <Dashboard />,
   },
+  {
+    path: "/patients",          // 👈 nova ruta za listu pacijenata
+    element: <Patients />,
+  },
+  {
+    path: "/patients/create",   // 👈 nova ruta za dodavanje pacijenta
+    element: <AddPatient />,
+  },
 ]);
+
