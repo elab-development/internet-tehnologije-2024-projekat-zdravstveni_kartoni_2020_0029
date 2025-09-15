@@ -7,7 +7,7 @@ import {
   MenuItem,
   Paper,
 } from "@mui/material";
-import { api } from "../auth/api";
+import { api } from "../../auth/api";
 
 type Props = {
   onCancel: () => void;
