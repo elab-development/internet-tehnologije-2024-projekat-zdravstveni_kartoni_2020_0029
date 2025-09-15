@@ -49,5 +49,7 @@ Route::middleware("api.response")->group(function () {
         //Rute za doktore
         Route::get("/doctors", [DoctorController::class, "index"]);
         Route::post("/doctors", [DoctorController::class, "store"]);
+        Route::delete('/doctors/{id}', [DoctorController::class, 'deleteDoctor']);
+        Route::put('/doctors/{id}', [DoctorController::class, 'updateDoctor']);
     });
 });
