@@ -4,18 +4,17 @@ import {
   TextField,
   Button,
   Typography,
-  Breadcrumbs,
-  Link,
   MenuItem,
   Paper,
 } from "@mui/material";
-import { api } from "../auth/api";
+import { api } from "../../auth/api";
 
 type Props = {
   onCancel: () => void;
+  onSuccess: () => void; // ✅ dodato
 };
 
-const AddPatient = ({ onCancel }: Props) => {
+const AddPatient = ({ onCancel, onSuccess }: Props) => {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -34,7 +33,7 @@ const AddPatient = ({ onCancel }: Props) => {
     try {
       const res = await api.post("/patients", form);
       console.log("Patient created:", res.data);
-      onCancel(); // vrati se na listu pacijenata
+      onSuccess(); // ✅ poziva success flow iz Dashboard-a
     } catch (err) {
       console.error("Greška prilikom dodavanja pacijenta:", err);
     }
@@ -48,7 +47,6 @@ const AddPatient = ({ onCancel }: Props) => {
       height="100%"
     >
       <Paper sx={{ p: 4, width: "100%", maxWidth: 500 }}>
-
         <Typography variant="h5" mb={3}>
           Add New Patient
         </Typography>
@@ -97,7 +95,6 @@ const AddPatient = ({ onCancel }: Props) => {
             value={form.date_of_birth}
             onChange={handleChange}
           />
-          {/* Pol */}
           <TextField
             select
             fullWidth
@@ -111,7 +108,6 @@ const AddPatient = ({ onCancel }: Props) => {
             <MenuItem value="female">female</MenuItem>
           </TextField>
 
-          {/* Dugmići */}
           <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
             <Button type="submit" variant="contained" fullWidth>
               Save
@@ -127,4 +123,5 @@ const AddPatient = ({ onCancel }: Props) => {
 };
 
 export default AddPatient;
+
 

@@ -11,9 +11,10 @@ import { api } from "../../auth/api";
 
 type Props = {
   onCancel: () => void;
+  onSuccess: () => void; // ✅ dodato
 };
 
-const AddDoctor = ({ onCancel }: Props) => {
+const AddDoctor = ({ onCancel, onSuccess }: Props) => {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -31,7 +32,7 @@ const AddDoctor = ({ onCancel }: Props) => {
     try {
       const res = await api.post("/doctors", form);
       console.log("Doctor created:", res.data);
-      onCancel(); // vrati se na listu doktora
+      onSuccess(); // ✅ poziva prebacivanje + snackbar iz Dashboard-a
     } catch (err) {
       console.error("Greška prilikom dodavanja doktora:", err);
     }
@@ -76,7 +77,6 @@ const AddDoctor = ({ onCancel }: Props) => {
             onChange={handleChange}
           />
 
-          {/* Specijalizacija */}
           <TextField
             select
             fullWidth
@@ -121,6 +121,7 @@ const AddDoctor = ({ onCancel }: Props) => {
 };
 
 export default AddDoctor;
+
 
 
 

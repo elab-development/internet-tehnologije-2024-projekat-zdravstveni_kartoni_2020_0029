@@ -9,8 +9,8 @@
 } from "@mui/material";
 import { Navigate } from "react-router-dom";
 import LeftSidebar from "../components/LeftSidebar";
-import Patients from "../components/PatientsInfo";
-import AddPatient from "../components/AddPatient";
+import Patients from "../components/patient/PatientsInfo";
+import AddPatient from "../components/patient/addPatient";
 import Doctors from "../components/doctors/DoctorsInfo";
 import AddDoctor from "../components/doctors/addDoctor";
 import AppoitmentInfo from "../components/AppoitmentsInfo";

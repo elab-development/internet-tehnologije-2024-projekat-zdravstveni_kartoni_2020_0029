@@ -1,15 +1,7 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,31 +12,15 @@ import {
   Alert,
   Pagination,
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { api } from "../auth/api";
-import { useAuth } from "../auth/useAuth";
-
-type BackendPatient = {
-  id: number;
-  jmbg: string;
-  gender: string;
-  user?: {
-    id: number;
-    name: string;
-    email: string;
-  };
-  medical_record?: {
-    id: number;
-    blood_type: string;
-  };
-};
+import { api } from "../../auth/api";
+import { useAuth } from "../../auth/useAuth";
+import PatientsTable, { BackendPatient } from "./PatientsTable";
 
 type Props = {
   onAddPatient: () => void;
 };
 
-const Patients = ({ onAddPatient }: Props) => {
+const Patients: React.FC<Props> = ({ onAddPatient }) => {
   const { user } = useAuth();
 
   const [patients, setPatients] = useState<BackendPatient[]>([]);
@@ -53,7 +29,6 @@ const Patients = ({ onAddPatient }: Props) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<number | null>(null);
 
-  // pagination state
   const [page, setPage] = useState(1);
   const patientsPerPage = 8;
 
@@ -98,7 +73,6 @@ const Patients = ({ onAddPatient }: Props) => {
     setPatientToDelete(null);
   };
 
-  // slice pacijenata za trenutnu stranicu
   const startIndex = (page - 1) * patientsPerPage;
   const currentPatients = patients.slice(startIndex, startIndex + patientsPerPage);
   const pageCount = Math.ceil(patients.length / patientsPerPage);
@@ -136,37 +110,11 @@ const Patients = ({ onAddPatient }: Props) => {
         )}
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>JMBG</TableCell>
-              <TableCell>Blood Group</TableCell>
-              <TableCell>Gender</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {currentPatients.map((p) => (
-              <TableRow key={p.id} hover>
-                <TableCell>{p.user?.name || "N/A"}</TableCell>
-                <TableCell>{p.jmbg}</TableCell>
-                <TableCell>{p.medical_record?.blood_type || "N/A"}</TableCell>
-                <TableCell>{p.gender}</TableCell>
-                <TableCell align="right">
-                  <IconButton>
-                    <EditIcon sx={{ color: "#1976d2" }} />
-                  </IconButton>
-                  <IconButton onClick={() => handleDeleteClick(p.id)}>
-                    <DeleteIcon sx={{ color: "#d32f2f" }} />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <PatientsTable
+        patients={currentPatients}
+        onEdit={(p) => console.log("TODO: edit", p)}
+        onDelete={handleDeleteClick}
+      />
 
       {pageCount > 1 && (
         <Box display="flex" justifyContent="center" mt={3}>
