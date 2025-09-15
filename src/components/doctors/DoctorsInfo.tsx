@@ -1,16 +1,19 @@
-import React from "react";
-import { Alert, CircularProgress, Box, Typography, Pagination } from "@mui/material";
+import React, { useState } from "react";
+import {
+  Alert,
+  CircularProgress,
+  Box,
+  Typography,
+  Pagination,
+} from "@mui/material";
 import { useAuth } from "../../auth/useAuth";
 import { useDoctors } from "./hooks/useDoctors";
 import DoctorFilters from "./DoctorFilters";
 import DoctorsTable from "./DoctorsTable";
 import DeleteDoctorDialog from "./DeleteDoctorDialog";
+import DoctorUpdate from "./DoctorUpdate";
 
-type Props = {
-  onAddDoctor: () => void;
-};
-
-const Doctors = ({ onAddDoctor }: Props) => {
+const Doctors = ({ onAddDoctor }: { onAddDoctor: () => void }) => {
   const { user } = useAuth();
   const {
     doctors, loading, error, successMsg,
@@ -19,7 +22,26 @@ const Doctors = ({ onAddDoctor }: Props) => {
     specialization, setSpecialization,
     deleteDialogOpen, doctorToDelete, newDoctorId, setNewDoctorId,
     handleDeleteClick, handleDeleteConfirm, handleDeleteCancel,
+    updateDoctor
   } = useDoctors();
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [doctorToEdit, setDoctorToEdit] = useState<any>(null);
+
+  const handleEditClick = (doctor: any) => {
+    setDoctorToEdit(doctor);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setEditDialogOpen(false);
+    setDoctorToEdit(null);
+  };
+
+  const handleEditCancel = () => {
+    setEditDialogOpen(false);
+    setDoctorToEdit(null);
+  };
 
   if (loading) {
     return (
@@ -44,7 +66,11 @@ const Doctors = ({ onAddDoctor }: Props) => {
         user={user}
       />
 
-      <DoctorsTable doctors={doctors} onDelete={handleDeleteClick} />
+      <DoctorsTable
+        doctors={doctors}
+        onDelete={handleDeleteClick}
+        onEdit={handleEditClick}
+      />
 
       {totalPages > 1 && (
         <Box display="flex" justifyContent="center" mt={3}>
@@ -65,8 +91,22 @@ const Doctors = ({ onAddDoctor }: Props) => {
         onCancel={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
       />
+
+      {doctorToEdit && (
+        <DoctorUpdate
+          open={editDialogOpen}
+          doctor={doctorToEdit}
+          onCancel={handleEditCancel}
+          onSuccess={handleEditSuccess}
+          updateDoctor={updateDoctor}
+        />
+      )}
     </>
   );
 };
 
 export default Doctors;
+
+
+
+

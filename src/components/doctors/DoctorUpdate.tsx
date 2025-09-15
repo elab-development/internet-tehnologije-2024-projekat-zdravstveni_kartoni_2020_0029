@@ -1,54 +1,74 @@
-import React, { useEffect, useState } from "react";
+// DoctorUpdate.tsx
+import React, { useState } from "react";
 import {
   Box,
   TextField,
   Button,
   Typography,
-  CircularProgress,
   Alert,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  SelectChangeEvent,
 } from "@mui/material";
-import { useParams } from "react-router-dom";
-import { api } from "../../auth/api";
-import { useAuth } from "../../auth/useAuth";
+import MuiAlert, { AlertProps } from "@mui/material/Alert";
 
-const DoctorUpdate = () => {
-  const { id } = useParams();
-  const { user } = useAuth();
+const CustomAlert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
+  props,
+  ref
+) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 
-  const [loading, setLoading] = useState(true);
+interface Doctor {
+  id: number;
+  user: {
+    name: string;
+    email: string;
+  };
+  specialization: string;
+  description?: string;
+}
+
+type Props = {
+  open: boolean;
+  doctor: Doctor;
+  onCancel: () => void;
+  onSuccess: () => void;
+  updateDoctor: (id: number, updatedData: any) => Promise<{ success: boolean }>;
+};
+
+const specializations = ["Kardiolog", "Neurolog", "Hirurg", "Pedijatar", "Ortoped"];
+
+const DoctorUpdate: React.FC<Props> = ({ open, doctor, onCancel, onSuccess, updateDoctor }) => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showSnackbar, setShowSnackbar] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    specialization: "",
-    description: "",
+    name: doctor.user.name,
+    email: doctor.user.email,
+    specialization: doctor.specialization,
+    description: doctor.description || "",
   });
 
-  useEffect(() => {
-    if (!id) return;
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent
+    ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+        ...prev,
+        [name!]: value,
+    }));
+    };
 
-    setLoading(true);
-    api
-      .get(`/doctors/${id}`)
-      .then((res) => {
-        const doc = res.data.data;
-        setFormData({
-          name: doc.user.name,
-          email: doc.user.email,
-          specialization: doc.specialization,
-          description: doc.description || "",
-        });
-      })
-      .catch(() => setError("Greška prilikom učitavanja doktora"))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
 
   const handleSubmit = async () => {
     setUpdating(true);
@@ -56,84 +76,111 @@ const DoctorUpdate = () => {
     setSuccess(null);
 
     try {
-      const res = await api.put(`/doctors/${id}`, formData);
-      setSuccess("Uspešno izmenjeni podaci doktora ✅");
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Greška prilikom izmene doktora"
-      );
+      const result = await updateDoctor(doctor.id, formData);
+      if (result.success) {
+        setSuccess("Uspešno izmenjeni podaci doktora ✅");
+        setShowSnackbar(true);
+      } else {
+        setError("Izmena nije uspela");
+      }
+    } catch {
+      setError("Greška prilikom izmene doktora");
     } finally {
       setUpdating(false);
     }
   };
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" mt={5}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (!user?.role || user.role !== "admin") {
-    return <Alert severity="error">Samo admin može menjati doktore</Alert>;
-  }
+  const handleSnackbarClose = (
+    event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") return;
+    setShowSnackbar(false);
+    onSuccess();
+  };
 
   return (
-    <Box maxWidth={600} mx="auto" mt={5}>
-      <Typography variant="h5" gutterBottom>
-        Izmena podataka doktora
-      </Typography>
+    <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
+      <DialogTitle>Izmena podataka doktora</DialogTitle>
+      <DialogContent>
+        {error && <Alert severity="error">{error}</Alert>}
 
-      {error && <Alert severity="error">{error}</Alert>}
-      {success && <Alert severity="success">{success}</Alert>}
+        <TextField
+          label="Ime"
+          name="name"
+          fullWidth
+          value={formData.name}
+          onChange={handleChange}
+          margin="normal"
+        />
+        <TextField
+          label="Email"
+          name="email"
+          fullWidth
+          value={formData.email}
+          onChange={handleChange}
+          margin="normal"
+        />
 
-      <TextField
-        label="Ime"
-        name="name"
-        fullWidth
-        value={formData.name}
-        onChange={handleChange}
-        margin="normal"
-      />
-      <TextField
-        label="Email"
-        name="email"
-        fullWidth
-        value={formData.email}
-        onChange={handleChange}
-        margin="normal"
-      />
-      <TextField
-        label="Specijalizacija"
-        name="specialization"
-        fullWidth
-        value={formData.specialization}
-        onChange={handleChange}
-        margin="normal"
-      />
-      <TextField
-        label="Opis"
-        name="description"
-        fullWidth
-        multiline
-        rows={4}
-        value={formData.description}
-        onChange={handleChange}
-        margin="normal"
-      />
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="spec-label">Specijalizacija</InputLabel>
+          <Select
+            labelId="spec-label"
+            name="specialization"
+            value={formData.specialization}
+            onChange={handleChange}
+            label="Specijalizacija"
+          >
+            {specializations.map((spec) => (
+              <MenuItem key={spec} value={spec}>
+                {spec}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleSubmit}
-        disabled={updating}
-        sx={{ mt: 2 }}
+        <TextField
+          label="Opis"
+          name="description"
+          fullWidth
+          multiline
+          rows={4}
+          value={formData.description}
+          onChange={handleChange}
+          margin="normal"
+        />
+      </DialogContent>
+
+      <DialogActions>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSubmit}
+          disabled={updating}
+        >
+          Sačuvaj izmene
+        </Button>
+        <Button variant="outlined" onClick={onCancel} disabled={updating}>
+          Otkaži
+        </Button>
+      </DialogActions>
+
+      <Snackbar
+        open={showSnackbar}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        Sačuvaj izmene
-      </Button>
-    </Box>
+        <CustomAlert onClose={handleSnackbarClose} severity="success" sx={{ width: "100%" }}>
+          {success}
+        </CustomAlert>
+      </Snackbar>
+    </Dialog>
   );
 };
 
 export default DoctorUpdate;
+
+
+
+

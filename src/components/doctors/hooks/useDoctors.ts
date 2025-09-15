@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { api } from "../../../auth/api";
 import { useDebounce } from "use-debounce";
 
-
 export const useDoctors = () => {
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -25,31 +24,38 @@ export const useDoctors = () => {
   const [debouncedSearch] = useDebounce(search, 500);
   const [debouncedSpecialization] = useDebounce(specialization, 500);
 
+  const fetchDoctors = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await api.get(
+        `/doctors?page=${page}&per_page=8&search=${debouncedSearch}&specialization=${debouncedSpecialization}`
+      );
+
+      let raw = res.data;
+      if (typeof raw === "string") {
+        raw = raw.replace(/^\uFEFF/, "");
+        raw = JSON.parse(raw);
+      }
+
+      if (raw.success && Array.isArray(raw.data?.data)) {
+        setDoctors(raw.data.data);
+        setTotalPages(raw.data.last_page || 1);
+      } else {
+        setError("Nepoznat format odgovora sa servera");
+      }
+    } catch (err: any) {
+      console.error("API greška:", err);
+      setError("Greška prilikom učitavanja doktora");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setLoading(true);
-    api
-        .get(`/doctors?page=${page}&per_page=8&search=${debouncedSearch}&specialization=${debouncedSpecialization}`)
-        .then((res) => {
-        let raw = res.data;
-        if (typeof raw === "string") {
-            raw = raw.replace(/^\uFEFF/, "");
-            raw = JSON.parse(raw);
-        }
-
-        if (raw.success && Array.isArray(raw.data?.data)) {
-            setDoctors(raw.data.data);
-            setTotalPages(raw.data.last_page || 1);
-        } else {
-            setError("Nepoznat format odgovora sa servera");
-        }
-        })
-        .catch((err) => {
-        console.error("API greška:", err);
-        setError("Greška prilikom učitavanja doktora");
-        })
-        .finally(() => setLoading(false));
-    }, [page, debouncedSearch, debouncedSpecialization]);
+    fetchDoctors();
+  }, [page, debouncedSearch, debouncedSpecialization]);
 
   const handleDeleteClick = (doctorId: number) => {
     setDoctorToDelete(doctorId);
@@ -85,12 +91,49 @@ export const useDoctors = () => {
     setNewDoctorId("");
   };
 
+  const updateDoctor = async (id: number, updatedData: any) => {
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const res = await api.put(`/doctors/${id}`, updatedData);
+      setDoctors((prev) =>
+        prev.map((doc) => (doc.id === id ? res.data.data : doc))
+      );
+      setSuccessMsg("Doktor je uspešno izmenjen");
+      return { success: true };
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Greška prilikom izmene doktora");
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
-    doctors, loading, error, successMsg,
-    page, setPage, totalPages,
-    search, setSearch,
-    specialization, setSpecialization,
-    deleteDialogOpen, doctorToDelete, newDoctorId, setNewDoctorId,
-    handleDeleteClick, handleDeleteConfirm, handleDeleteCancel,
+    doctors,
+    loading,
+    error,
+    successMsg,
+    setSuccessMsg,     // <--- Dodato
+    fetchDoctors,      // <--- Dodato
+    page,
+    setPage,
+    totalPages,
+    search,
+    setSearch,
+    specialization,
+    setSpecialization,
+    deleteDialogOpen,
+    doctorToDelete,
+    newDoctorId,
+    setNewDoctorId,
+    handleDeleteClick,
+    handleDeleteConfirm,
+    handleDeleteCancel,
+    updateDoctor,
   };
 };
+
+
