@@ -39,7 +39,7 @@ export default function Dashboard() {
 
   // 👇 Breadcrumbs logika
   const getBreadcrumbs = () => {
-    const crumbs: { label: string; view?: string }[] = [{ label: "Dashboard", view: "patients" }];
+    const crumbs: { label: string; view?: string }[] = [{ label: "", view: "patients" }];
 
     if (activeView === "patients") {
       crumbs.push({ label: "Patients", view: "patients" });

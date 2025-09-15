@@ -19,6 +19,9 @@ import {
   CircularProgress,
   Alert,
   Pagination,
+  TextField,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -46,17 +49,25 @@ const Doctors = ({ onAddDoctor }: Props) => {
   const [doctors, setDoctors] = useState<BackendDoctor[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [doctorToDelete, setDoctorToDelete] = useState<number | null>(null);
+  const [newDoctorId, setNewDoctorId] = useState<number | "">("");
 
   // pagination state
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // search state
+  const [search, setSearch] = useState("");
+  const [specialization, setSpecialization] = useState("");
+
+  const specializations = ["Kardiolog", "Neurolog", "Hirurg", "Pedijatar", "Ortoped"];
+
   useEffect(() => {
     setLoading(true);
     api
-      .get(`/doctors?page=${page}&per_page=8`)
+      .get(`/doctors?page=${page}&per_page=8&search=${search}&specialization=${specialization}`)
       .then((res) => {
         let raw = res.data;
         if (typeof raw === "string") {
@@ -76,24 +87,46 @@ const Doctors = ({ onAddDoctor }: Props) => {
         setError("Greška prilikom učitavanja doktora");
       })
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [page, search, specialization]);
 
   const handleDeleteClick = (doctorId: number) => {
     setDoctorToDelete(doctorId);
     setDeleteDialogOpen(true);
+    setError(null);
+    setSuccessMsg(null);
   };
 
-  const handleDeleteConfirm = () => {
-    if (doctorToDelete) {
-      setDoctors((prev) => prev.filter((d) => d.id !== doctorToDelete));
+  const handleDeleteConfirm = async () => {
+    if (doctorToDelete && newDoctorId !== "") {
+      try {
+        await api.delete(`/doctors/${doctorToDelete}`, {
+          data: { new_doctor_id: newDoctorId },
+        });
+
+        setDoctors((prev) => prev.filter((d) => d.id !== doctorToDelete));
+        setSuccessMsg("Doktor je uspešno obrisan");
+      } catch (err: any) {
+        console.error("Greška prilikom brisanja:", err);
+        setError(err.response?.data?.message || "Greška prilikom brisanja doktora");
+      }
+    } else {
+      setError("Morate uneti ID doktora koji preuzima kartone");
     }
     setDeleteDialogOpen(false);
     setDoctorToDelete(null);
+    setNewDoctorId("");
   };
 
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setDoctorToDelete(null);
+    setNewDoctorId("");
+  };
+
+  // ručno pokretanje pretrage (klik na dugme)
+  const handleSearch = () => {
+    setPage(1);
+    setSearch(search.trim());
   };
 
   if (loading) {
@@ -105,12 +138,13 @@ const Doctors = ({ onAddDoctor }: Props) => {
     );
   }
 
-  if (error) {
-    return <Alert severity="error">{error}</Alert>;
-  }
-
   return (
     <>
+      {/* Success i error poruke */}
+      {successMsg && <Alert severity="success">{successMsg}</Alert>}
+      {error && <Alert severity="error">{error}</Alert>}
+
+      {/* Header sa dugmetom, search barom i filterom po specijalizaciji */}
       <Box
         sx={{
           display: "flex",
@@ -122,17 +156,45 @@ const Doctors = ({ onAddDoctor }: Props) => {
       >
         <Typography variant="h4">Doctors</Typography>
 
-        {(user?.role === "admin" || user?.role === "doctor") && (
-          <Button variant="contained" onClick={onAddDoctor}>
-            New Doctor
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <TextField
+            size="small"
+            placeholder="Search doctors..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <Select
+            size="small"
+            displayEmpty
+            value={specialization}
+            onChange={(e) => setSpecialization(e.target.value)}
+          >
+            <MenuItem value="">All specializations</MenuItem>
+            {specializations.map((spec) => (
+              <MenuItem key={spec} value={spec}>
+                {spec}
+              </MenuItem>
+            ))}
+          </Select>
+
+          <Button variant="outlined" onClick={handleSearch}>
+            Search
           </Button>
-        )}
+
+          {(user?.role === "admin" || user?.role === "doctor") && (
+            <Button variant="contained" onClick={onAddDoctor}>
+              New Doctor
+            </Button>
+          )}
+        </Box>
       </Box>
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>ID</TableCell> {/* ➕ Dodato */}
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Specialization</TableCell>
@@ -142,6 +204,7 @@ const Doctors = ({ onAddDoctor }: Props) => {
           <TableBody>
             {doctors.map((doc) => (
               <TableRow key={doc.id} hover>
+                <TableCell>{doc.id}</TableCell> {/* ➕ Dodato */}
                 <TableCell>{doc.user?.name || "N/A"}</TableCell>
                 <TableCell>{doc.user?.email || "N/A"}</TableCell>
                 <TableCell>{doc.specialization}</TableCell>
@@ -158,6 +221,7 @@ const Doctors = ({ onAddDoctor }: Props) => {
           </TableBody>
         </Table>
       </TableContainer>
+
 
       {totalPages > 1 && (
         <Box display="flex" justifyContent="center" mt={3}>
@@ -180,8 +244,17 @@ const Doctors = ({ onAddDoctor }: Props) => {
         <DialogTitle id="delete-dialog-title">Delete Doctor</DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-dialog-description">
-            Are you sure you want to delete this doctor? This action cannot be undone.
+            Unesite ID doktora koji će preuzeti kartone od doktora kojeg brišete:
           </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Novi doktor ID"
+            type="number"
+            fullWidth
+            value={newDoctorId}
+            onChange={(e) => setNewDoctorId(Number(e.target.value))}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteCancel} color="primary">
@@ -197,6 +270,10 @@ const Doctors = ({ onAddDoctor }: Props) => {
 };
 
 export default Doctors;
+
+
+
+
 
 
 
