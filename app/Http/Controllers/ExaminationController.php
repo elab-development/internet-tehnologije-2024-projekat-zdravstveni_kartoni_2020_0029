@@ -74,6 +74,9 @@ class ExaminationController extends Controller
         elseif ($user->isDoctor()) {
             $query->where('doctor_id', $user->doctorProfile->id);
         }
+        elseif ($user->isAdmin()) {
+            // admin vidi sve -> ne dodajemo dodatni filter
+        }
         else {
             return response()->json([
                 'success' => false,
@@ -102,6 +105,7 @@ class ExaminationController extends Controller
             'data' => $examinations
         ]);
     }
+
 
     /**
      * Prikaz pojedinačnog pregleda
@@ -170,19 +174,28 @@ class ExaminationController extends Controller
         $examination = Examination::findOrFail($id);
         $user = Auth::user();
 
-        // Provera ovlašćenja (samo lekar koji je kreirao pregled)
-        if ($examination->doctor_id !== $user->doctorProfile->id) {
+        // Ako je doktor, mora da bude vlasnik pregleda
+        if ($user->isDoctor() && $examination->doctor_id !== $user->doctorProfile->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Nemate ovlašćenje za brisanje ovog pregleda'
             ], 403);
         }
 
-        $examination->delete();
+        // Admin može sve
+        if ($user->isAdmin() || $user->isDoctor()) {
+            $examination->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pregled uspešno obrisan'
+            ]);
+        }
 
         return response()->json([
-            'success' => true,
-            'message' => 'Pregled uspešno obrisan'
-        ]);
+            'success' => false,
+            'message' => 'Nemate ovlašćenje za ovu akciju'
+        ], 403);
     }
+
 }

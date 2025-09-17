@@ -127,50 +127,50 @@ class DoctorController extends Controller
 
     // Ažuriranje doktora (samo admin ili sam lekar)
     public function updateDoctor(Request $request, $id)
-{
-    $doctor = Doctor::find($id);
-    $user = Auth::user();
+    {
+        $doctor = Doctor::find($id);
+        $user = Auth::user();
 
-    if (!$doctor) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Doktor nije pronađen'
-        ], 404);
-    }
+        if (!$doctor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doktor nije pronađen'
+            ], 404);
+        }
 
-    // Dozvoli adminu sve izmene, ali običnom korisniku samo nad svojim doktorom
-    if (!$user->isAdmin() && $user->id !== $doctor->user_id) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Nemate ovlašćenje za izmenu ovog doktora'
-        ], 403);
-    }
+        // Dozvoli adminu sve izmene, ali običnom korisniku samo nad svojim doktorom
+        if (!$user->isAdmin() && $user->id !== $doctor->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nemate ovlašćenje za izmenu ovog doktora'
+            ], 403);
+        }
 
-    // Validacija za doktora
-    $doctorData = $request->only(['specialization', 'description']);
-    $validatedDoctorData = validator($doctorData, [
-        'specialization' => 'sometimes|string|max:255',
-        'description' => 'nullable|string',
-    ])->validate();
-
-    $doctor->update($validatedDoctorData);
-
-    // Validacija za korisnika (ako su poslati)
-    $userData = $request->only(['name', 'email']);
-    if (!empty($userData)) {
-        $validatedUserData = validator($userData, [
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|max:255',
+        // Validacija za doktora
+        $doctorData = $request->only(['specialization', 'description']);
+        $validatedDoctorData = validator($doctorData, [
+            'specialization' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
         ])->validate();
 
-        $doctor->user()->update($validatedUserData);
-    }
+        $doctor->update($validatedDoctorData);
 
-    return response()->json([
-        'success' => true,
-        'data' => $doctor->load('user')
-    ]);
-}
+        // Validacija za korisnika (ako su poslati)
+        $userData = $request->only(['name', 'email']);
+        if (!empty($userData)) {
+            $validatedUserData = validator($userData, [
+                'name' => 'sometimes|string|max:255',
+                'email' => 'sometimes|email|max:255',
+            ])->validate();
+
+            $doctor->user()->update($validatedUserData);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $doctor->load('user')
+        ]);
+    }
 
 
     // Brisanje doktora (samo admin)

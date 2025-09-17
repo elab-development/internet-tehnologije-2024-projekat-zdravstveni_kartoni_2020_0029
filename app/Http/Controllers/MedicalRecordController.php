@@ -32,19 +32,25 @@ class MedicalRecordController extends Controller
     }
 
     // Prikaz pojedinačnog zdravstvenog kartona
-    public function show($id)
+    public function show($patientId)
     {
-        $medicalRecord = MedicalRecord::with(['examinations', 'doctor.user', 'patient.user'])->find($id);
         $user = Auth::user();
+
+        // Nađi karton preko patient_id
+        $medicalRecord = \App\Models\MedicalRecord::with([
+            'patient.user',      // info o pacijentu i njegovom user nalogu
+            'doctor.user',       // info o doktoru i njegovom user nalogu
+            'examinations',      // sve preglede
+        ])->where('patient_id', $patientId)->first();
 
         if (!$medicalRecord) {
             return response()->json([
                 'success' => false,
-                'message' => 'Zdravstveni karton nije pronađen'
+                'message' => 'Zdravstveni karton za ovog pacijenta nije pronađen'
             ], 404);
         }
 
-        //Provera pristupa
+        // 🔒 Provera pristupa
         if ($user->isPatient()) {
             $patient = $user->patientProfile;
             if ($medicalRecord->patient_id !== $patient->id) {
@@ -53,8 +59,7 @@ class MedicalRecordController extends Controller
                     'message' => 'Nemate pristup ovom zdravstvenom kartonu'
                 ], 403);
             }
-        } 
-        elseif ($user->isDoctor()) {
+        } elseif ($user->isDoctor()) {
             $doctor = $user->doctorProfile;
             if ($medicalRecord->doctor_id !== $doctor->id) {
                 return response()->json([
@@ -66,9 +71,10 @@ class MedicalRecordController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $medicalRecord
+            'data'    => $medicalRecord
         ]);
     }
+
 
     // Pacijent menja lekara
     public function changeDoctor(Request $request, $id)

@@ -37,15 +37,18 @@ Route::middleware("api.response")->group(function () {
         // Rute za preglede
         Route::post("/examinations", [ExaminationController::class, "store"]);
         Route::get("/examinations", [ExaminationController::class, "index"]);
-        Route::put("/examinations/{id}", [ExaminationController::class, "update"]);
+        Route::put("/examinations/{id}", [ExaminationController::class, "updateExamination"]);
         Route::get("/appointments/doctor/{doctorId}", [AppointmentController::class, "byDoctor"]);
 
         // Rute za pacijente
         Route::get("/patients", [PatientController::class, "index"]);
+        Route::get('/patients/by-doctor', [PatientController::class, 'getPatientsByDoctor']);
         Route::get("/patients/{id}", [PatientController::class, "show"]);
         Route::post("/patients", [PatientController::class, "store"]);
         Route::put("/patients/{id}", [PatientController::class, "updatePatient"]);
         Route::delete("/patients/{id}", [PatientController::class, "deletePatient"]);
+
+
         //Rute za doktore
         Route::get("/doctors", [DoctorController::class, "index"]);
         Route::post("/doctors", [DoctorController::class, "store"]);
