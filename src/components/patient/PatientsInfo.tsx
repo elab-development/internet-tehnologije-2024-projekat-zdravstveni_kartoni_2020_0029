@@ -1,81 +1,61 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Typography,
-  Box,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  CircularProgress,
   Alert,
+  CircularProgress,
+  Box,
+  Typography,
   Pagination,
+  Button,
+  Paper,
 } from "@mui/material";
-import { api } from "../../auth/api";
 import { useAuth } from "../../auth/useAuth";
-import PatientsTable, { BackendPatient } from "./PatientsTable";
+import { usePatients } from "./hooks/usePatients";
+import { useRecords } from "../medicalRecord/hooks/useRecords"; // 👈 hook za kartone
+import PatientFilters from "./PatientFilters";
+import PatientsTable from "./PatientsTable";
+import DeletePatientDialog from "./DeletePatientDialog";
+import PatientUpdate from "./PatientUpdate";
+import MedicalRecordInfo from "../medicalRecord/MedicalRecordInfo";
 
-type Props = {
-  onAddPatient: () => void;
-};
-
-const Patients: React.FC<Props> = ({ onAddPatient }) => {
+const Patients = ({ onAddPatient }: { onAddPatient: () => void }) => {
   const { user } = useAuth();
+  const {
+    patients, loading, error, successMsg,
+    page, setPage, totalPages,
+    search, setSearch,
+    specialization, setSpecialization,
+    deleteDialogOpen, patientToDelete, newPatientId, setNewPatientId,
+    handleDeleteClick, handleDeleteConfirm, handleDeleteCancel,
+    updatePatient, doctorSearch, setDoctorSearch
+  } = usePatients();
 
-  const [patients, setPatients] = useState<BackendPatient[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [patientToDelete, setPatientToDelete] = useState<number | null>(null);
+  const { record, loading: recordLoading, error: recordError, fetchRecord } = useRecords();
 
-  const [page, setPage] = useState(1);
-  const patientsPerPage = 8;
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [patientToEdit, setPatientToEdit] = useState<any>(null);
+  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
 
+  const handleEditClick = (patient: any) => {
+    setPatientToEdit(patient);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setEditDialogOpen(false);
+    setPatientToEdit(null);
+  };
+
+  const handleEditCancel = () => {
+    setEditDialogOpen(false);
+    setPatientToEdit(null);
+  };
+
+  // kad klikneš na pacijenta → povuci karton
   useEffect(() => {
-    setLoading(true);
-    api
-      .get("/patients")
-      .then((res) => {
-        let raw = res.data;
-        if (typeof raw === "string") {
-          raw = raw.replace(/^\uFEFF/, "");
-          raw = JSON.parse(raw);
-        }
-        if (raw.success && Array.isArray(raw.data)) {
-          setPatients(raw.data);
-        } else {
-          setError("Nepoznat format odgovora sa servera");
-        }
-      })
-      .catch((err) => {
-        console.error("API greška:", err);
-        setError("Greška prilikom učitavanja pacijenata");
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleDeleteClick = (patientId: number) => {
-    setPatientToDelete(patientId);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = () => {
-    if (patientToDelete) {
-      setPatients((prev) => prev.filter((p) => p.id !== patientToDelete));
+    if (selectedPatientId) {
+      fetchRecord(selectedPatientId);
     }
-    setDeleteDialogOpen(false);
-    setPatientToDelete(null);
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteDialogOpen(false);
-    setPatientToDelete(null);
-  };
-
-  const startIndex = (page - 1) * patientsPerPage;
-  const currentPatients = patients.slice(startIndex, startIndex + patientsPerPage);
-  const pageCount = Math.ceil(patients.length / patientsPerPage);
+  }, [selectedPatientId]);
 
   if (loading) {
     return (
@@ -86,76 +66,84 @@ const Patients: React.FC<Props> = ({ onAddPatient }) => {
     );
   }
 
-  if (error) {
-    return <Alert severity="error">{error}</Alert>;
-  }
-
   return (
     <>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 4,
-          userSelect: "none",
-        }}
-      >
-        <Typography variant="h4">Patients</Typography>
+      {successMsg && <Alert severity="success">{successMsg}</Alert>}
+      {error && <Alert severity="error">{error}</Alert>}
 
-        {(user?.role === "admin" || user?.role === "doctor") && (
-          <Button variant="contained" onClick={onAddPatient}>
-            New patient
+      {/* Ako je odabran pacijent, prikaži njegov karton */}
+      {selectedPatientId ? (
+        <Box sx={{ p: 2 }}>
+          <Button variant="outlined" sx={{ mb: 2 }} onClick={() => setSelectedPatientId(null)}>
+            ← Nazad na listu pacijenata
           </Button>
-        )}
-      </Box>
 
-      <PatientsTable
-        patients={currentPatients}
-        onEdit={(p) => console.log("TODO: edit", p)}
-        onDelete={handleDeleteClick}
-      />
+          {recordLoading && (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+              <CircularProgress />
+              <Typography sx={{ ml: 2 }}>Učitavanje kartona...</Typography>
+            </Box>
+          )}
 
-      {pageCount > 1 && (
-        <Box display="flex" justifyContent="center" mt={3}>
-          <Pagination
-            count={pageCount}
-            page={page}
-            onChange={(_, value) => setPage(value)}
-            color="primary"
-          />
+          {recordError && <Alert severity="error">{recordError}</Alert>}
+
+          {!recordLoading && !recordError && record && (
+            <MedicalRecordInfo record={record} />
+          )}
         </Box>
+      ) : (
+        <>
+          <PatientFilters
+            search={search}
+            setSearch={setSearch}
+            specialization={specialization}
+            setSpecialization={setSpecialization}
+            onAddPatient={onAddPatient}
+            user={user}
+            doctorSearch={doctorSearch}
+            setDoctorSearch={setDoctorSearch}
+          />
+
+          <PatientsTable
+            patients={patients}
+            onDelete={handleDeleteClick}
+            onEdit={handleEditClick}
+            onSelect={(id) => setSelectedPatientId(id)} // 👈 sada radi
+          />
+
+          {totalPages > 1 && (
+            <Box display="flex" justifyContent="center" mt={3}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_, value) => setPage(value)}
+                color="primary"
+              />
+            </Box>
+          )}
+        </>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
+      <DeletePatientDialog
         open={deleteDialogOpen}
-        onClose={handleDeleteCancel}
-        aria-labelledby="delete-dialog-title"
-        aria-describedby="delete-dialog-description"
-      >
-        <DialogTitle id="delete-dialog-title">Delete Patient</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="delete-dialog-description">
-            Are you sure you want to delete this patient? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+        patientId={patientToDelete}
+        newPatientId={newPatientId}
+        setNewPatientId={setNewPatientId}
+        onCancel={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+      />
+
+      {patientToEdit && (
+        <PatientUpdate
+          open={editDialogOpen}
+          patient={patientToEdit}
+          onCancel={handleEditCancel}
+          onSuccess={handleEditSuccess}
+          updatePatient={updatePatient}
+        />
+      )}
     </>
   );
 };
 
 export default Patients;
-
-
-
-
-

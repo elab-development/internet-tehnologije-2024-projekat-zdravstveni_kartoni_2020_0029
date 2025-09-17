@@ -5,39 +5,30 @@ import {
   Button, TextField
 } from "@mui/material";
 
-type DeleteDoctorDialogProps = {
+type DeletePatientDialogProps = {
   open: boolean;
-  doctorId: number | null;
-  newDoctorId: number | "";
-  setNewDoctorId: (id: number | "") => void;
+  patientId: number | null;
+  newPatientId: number | "";
+  setNewPatientId: (id: number | "") => void;
   onCancel: () => void;
   onConfirm: () => void;
 };
 
 
-const DeleteDoctorDialog: React.FC<DeleteDoctorDialogProps> = ({
+const DeletePatientDialog: React.FC<DeletePatientDialogProps> = ({
   open,
-  doctorId,
-  newDoctorId,
-  setNewDoctorId,
+  patientId,
+  newPatientId,
+  setNewPatientId,
   onCancel,
   onConfirm,
 }) => (
   <Dialog open={open} onClose={onCancel}>
-    <DialogTitle>Delete Doctor</DialogTitle>
+    <DialogTitle>Delete Patient</DialogTitle>
     <DialogContent>
       <DialogContentText>
-        Unesite ID doktora koji će preuzeti kartone od doktora kojeg brišete:
+        Da li ste sigurni da zelite da obrisete pacijenta?
       </DialogContentText>
-      <TextField
-        autoFocus
-        margin="dense"
-        label="Novi doktor ID"
-        type="number"
-        fullWidth
-        value={newDoctorId}
-        onChange={(e) => setNewDoctorId(Number(e.target.value))}
-      />
     </DialogContent>
     <DialogActions>
       <Button onClick={onCancel} color="primary">Cancel</Button>
@@ -46,4 +37,4 @@ const DeleteDoctorDialog: React.FC<DeleteDoctorDialogProps> = ({
   </Dialog>
 );
 
-export default DeleteDoctorDialog;
+export default DeletePatientDialog;

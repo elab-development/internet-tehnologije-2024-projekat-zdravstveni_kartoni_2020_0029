@@ -1,4 +1,4 @@
-// DoctorUpdate.tsx
+// PatientUpdate.tsx
 import React, { useState } from "react";
 import {
   Box,
@@ -26,7 +26,7 @@ const CustomAlert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
-interface Doctor {
+interface Patient {
   id: number;
   user: {
     name: string;
@@ -38,25 +38,25 @@ interface Doctor {
 
 type Props = {
   open: boolean;
-  doctor: Doctor;
+  patient: Patient;
   onCancel: () => void;
   onSuccess: () => void;
-  updateDoctor: (id: number, updatedData: any) => Promise<{ success: boolean }>;
+  updatePatient: (id: number, updatedData: any) => Promise<{ success: boolean }>;
 };
 
 const specializations = ["Kardiolog", "Neurolog", "Hirurg", "Pedijatar", "Ortoped"];
 
-const DoctorUpdate: React.FC<Props> = ({ open, doctor, onCancel, onSuccess, updateDoctor }) => {
+const PatientUpdate: React.FC<Props> = ({ open, patient, onCancel, onSuccess, updatePatient }) => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showSnackbar, setShowSnackbar] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: doctor.user.name,
-    email: doctor.user.email,
-    specialization: doctor.specialization,
-    description: doctor.description || "",
+    name: patient.user.name,
+    email: patient.user.email,
+    specialization: patient.specialization,
+    description: patient.description || "",
   });
 
   const handleChange = (
@@ -76,7 +76,7 @@ const DoctorUpdate: React.FC<Props> = ({ open, doctor, onCancel, onSuccess, upda
     setSuccess(null);
 
     try {
-      const result = await updateDoctor(doctor.id, formData);
+      const result = await updatePatient(patient.id, formData);
       if (result.success) {
         setSuccess("Uspešno izmenjeni podaci doktora ✅");
         setShowSnackbar(true);
@@ -179,7 +179,7 @@ const DoctorUpdate: React.FC<Props> = ({ open, doctor, onCancel, onSuccess, upda
   );
 };
 
-export default DoctorUpdate;
+export default PatientUpdate;
 
 
 

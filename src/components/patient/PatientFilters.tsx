@@ -1,24 +1,27 @@
 import React from "react";
 import { Box, TextField, Select, MenuItem, Button, Typography } from "@mui/material";
 
-type DoctorFiltersProps = {
+type PatientFiltersProps = {
   search: string;
   setSearch: (val: string) => void;
   specialization: string;
   setSpecialization: (val: string) => void;
-  onAddDoctor: () => void;
-  user: { role?: string } | null; // možeš proširiti ako imaš definisan User tip
+  onAddPatient: () => void;
+  user: { role?: string } | null; 
+  doctorSearch: string;
+  setDoctorSearch: (val: string) => void;
 };
 
-const DoctorFilters: React.FC<DoctorFiltersProps> = ({
+const PatientFilters: React.FC<PatientFiltersProps> = ({
   search,
   setSearch,
   specialization,
   setSpecialization,
-  onAddDoctor,
+  onAddPatient,
   user,
+  doctorSearch, 
+  setDoctorSearch
 }) => {
-  const specializations = ["Kardiolog", "Neurolog", "Hirurg", "Pedijatar", "Ortoped"];
 
   return (
     <Box
@@ -30,33 +33,26 @@ const DoctorFilters: React.FC<DoctorFiltersProps> = ({
         userSelect: "none",
       }}
     >
-      <Typography variant="h4">Doctors</Typography>
+      <Typography variant="h4">Patients</Typography>
 
       <Box sx={{ display: "flex", gap: 2 }}>
         <TextField
           size="small"
-          placeholder="Search doctors..."
+          placeholder="Search patients..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <Select
+        <TextField
           size="small"
-          displayEmpty
-          value={specialization}
-          onChange={(e) => setSpecialization(e.target.value)}
-        >
-          <MenuItem value="">All specializations</MenuItem>
-          {specializations.map((spec) => (
-            <MenuItem key={spec} value={spec}>
-              {spec}
-            </MenuItem>
-          ))}
-        </Select>
+          placeholder="Search by doctor..."
+          value={doctorSearch}
+          onChange={(e) => setDoctorSearch(e.target.value)}
+        />
 
-        {(user?.role === "admin" || user?.role === "doctor") && (
-          <Button variant="contained" onClick={onAddDoctor}>
-            New Doctor
+        {(user?.role === "admin" || user?.role === "patient") && (
+          <Button variant="contained" onClick={onAddPatient}>
+            New Patient
           </Button>
         )}
       </Box>
@@ -64,5 +60,5 @@ const DoctorFilters: React.FC<DoctorFiltersProps> = ({
   );
 };
 
-export default DoctorFilters;
+export default PatientFilters;
 

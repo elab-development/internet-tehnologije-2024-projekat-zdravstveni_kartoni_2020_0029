@@ -37,10 +37,16 @@ type Props = {
   patients: BackendPatient[];
   onEdit: (patient: BackendPatient) => void;
   onDelete: (id: number) => void;
+  onSelect: (id: number) => void;
 };
 
-const PatientsTable: React.FC<Props> = ({ patients, onEdit, onDelete }) => (
-  <TableContainer component={Paper}>
+const PatientsTable: React.FC<Props> = ({
+  patients,
+  onEdit,
+  onDelete,
+  onSelect,
+}) => (
+  <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
     <Table>
       <TableHead>
         <TableRow>
@@ -55,20 +61,26 @@ const PatientsTable: React.FC<Props> = ({ patients, onEdit, onDelete }) => (
       </TableHead>
       <TableBody>
         {patients.map((p) => (
-          <TableRow key={p.id} hover>
+          <TableRow
+            key={p.id}
+            hover
+            sx={{ cursor: "pointer" }}
+            onClick={() => onSelect(p.id)} // klik na red otvara karton
+          >
             <TableCell>{p.id}</TableCell>
             <TableCell>{p.user?.name || "N/A"}</TableCell>
             <TableCell>{p.jmbg}</TableCell>
             <TableCell>{p.medical_record?.blood_type || "N/A"}</TableCell>
             <TableCell>{p.gender}</TableCell>
-            <TableCell>
-              {p.medical_record?.doctor?.user?.name || "N/A"}
-            </TableCell>
-            <TableCell align="right">
-              <IconButton onClick={() => onEdit(p)}>
+            <TableCell>{p.medical_record?.doctor?.user?.name || "N/A"}</TableCell>
+            <TableCell
+              align="right"
+              onClick={(e) => e.stopPropagation()} // spreči da klik na dugmiće otvara karton
+            >
+              <IconButton onClick={() => onEdit(p)} size="small">
                 <EditIcon sx={{ color: "#1976d2" }} />
               </IconButton>
-              <IconButton onClick={() => onDelete(p.id)}>
+              <IconButton onClick={() => onDelete(p.id)} size="small">
                 <DeleteIcon sx={{ color: "#d32f2f" }} />
               </IconButton>
             </TableCell>
@@ -80,9 +92,3 @@ const PatientsTable: React.FC<Props> = ({ patients, onEdit, onDelete }) => (
 );
 
 export default PatientsTable;
-
-
-
-
-
-
