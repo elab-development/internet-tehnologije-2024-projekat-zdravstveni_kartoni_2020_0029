@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "../pages/Login";
-import Dashboard from "../pages/Dashboard";   // zajednički
-import DoctorDashboard from "../pages/DoctorDashboard"; 
+import Dashboard from "../pages/Dashboard"; // zajednički
+import DoctorDashboard from "../pages/DoctorDashboard";
 import PatientDashboard from "../pages/PatientDashboard";
 
 // Uvoziš unutrašnje stranice
@@ -19,14 +19,14 @@ function App() {
 
       {/* Admin Dashboard kao parent */}
       <Route path="/dashboard" element={<Dashboard />}>
-        <Route path="patients" element={<Patients />} />
+        {/*<Route path="patients" element={<Patients />} />
         <Route path="addPatient" element={<AddPatient />} />
 
         <Route path="doctors" element={<Doctors />} />
         <Route path="addDoctor" element={<AddDoctor />} />
 
         <Route path="appointments" element={<AppoitmentInfo />} />
-        <Route path="addAppointment" element={<AddAppointment />} />
+        <Route path="addAppointment" element={<AddAppointment />} />*/}
       </Route>
 
       {/* Doctor */}
@@ -39,7 +39,3 @@ function App() {
 }
 
 export default App;
-
-
-
-

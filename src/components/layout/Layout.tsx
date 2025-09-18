@@ -1,4 +1,4 @@
-﻿import {
+import {
   Box,
   Typography,
   CircularProgress,
@@ -7,19 +7,18 @@
   Snackbar,
   Alert,
 } from "@mui/material";
-import { Navigate } from "react-router-dom";
-import LeftSidebar from "../components/LeftSidebar";
-import Patients from "../components/patient/PatientsInfo";
-import AddPatient from "../components/patient/addPatient";
-import Doctors from "../components/doctors/DoctorsInfo";
-import AddDoctor from "../components/doctors/addDoctor";
-import AppoitmentInfo from "../components/appointments/AppoitmentsInfo";
-import AddAppointment from "../components/appointments/AddAppointment";
-import { useAuth } from "../auth/useAuth";
-import { useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import LeftSidebar from "../LeftSidebar";
+import { useAuth } from "../../auth/useAuth";
+import { ReactNode, useState } from "react";
 
-export default function Dashboard() {
-  const [activeView, setActiveView] = useState("patients");
+const Layout: React.FC<{
+  children: ReactNode;
+  page?: string;
+  crumbs1: any[];
+}> = ({ children, page, crumbs1 }) => {
+  const [activeView, setActiveView] = useState(page);
+  const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -41,6 +40,11 @@ export default function Dashboard() {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
+
+  const navigateTo = (link: string) => {
+    setActiveView(link);
+    navigate(link);
+  };
 
   const getBreadcrumbs = () => {
     const crumbs: { label: string; view?: string }[] = [
@@ -70,83 +74,38 @@ export default function Dashboard() {
       crumbs.push({ label: "Appointments", view: "appointments" });
       crumbs.push({ label: "New Appointment", view: "addAppointment" });
     }
-
+    if (activeView === "patients123") {
+      crumbs.push({ label: "Patients123", view: "patients" });
+    }
     return crumbs;
   };
 
-  const renderContent = () => {
-    switch (activeView) {
-      case "patients":
-        return <Patients onAddPatient={() => setActiveView("addPatient")} />;
-      case "addPatient":
-        return (
-          <AddPatient
-            onCancel={() => setActiveView("patients")}
-            onSuccess={() => {
-              setActiveView("patients");
-              setSuccessMessage("Patient created successfully ✅");
-            }}
-          />
-        );
-      case "doctors":
-        return <Doctors onAddDoctor={() => setActiveView("addDoctor")} />;
-      case "addDoctor":
-        return (
-          <AddDoctor
-            onCancel={() => setActiveView("doctors")}
-            onSuccess={() => {
-              setActiveView("doctors");
-              setSuccessMessage("Doctor created successfully ✅");
-            }}
-          />
-        );
-      case "appointments":
-        return (
-          <AppoitmentInfo
-            onAddAppointment={() => setActiveView("addAppointment")}
-          />
-        );
-      case "addAppointment":
-        return (
-          <AddAppointment
-            onCancel={() => setActiveView("appointments")}
-            onSuccess={() => {
-              setActiveView("appointments");
-              setSuccessMessage("Appointment created successfully ✅");
-            }}
-          />
-        );
-      default:
-        return <Patients onAddPatient={() => setActiveView("addPatient")} />;
-    }
-  };
-
+  const breadcrumbs = crumbs1 ?? getBreadcrumbs();
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
-      <LeftSidebar onSelect={setActiveView} activeView={activeView} />
+      <LeftSidebar onSelect={navigateTo} activeView={activeView ?? ""} />
       <Box sx={{ flexGrow: 1, p: 4 }}>
         <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-          {getBreadcrumbs().map((crumb, idx) =>
-            idx === getBreadcrumbs().length - 1 ? (
+          {breadcrumbs.map((crumb, idx) =>
+            idx === breadcrumbs.length - 1 ? (
               <Typography key={idx} color="text.primary" fontWeight="bold">
                 {crumb.label}
               </Typography>
             ) : (
               <Link
+                href={"/" + crumb.view}
                 key={idx}
                 underline="hover"
                 color="inherit"
                 sx={{ cursor: "pointer" }}
-                onClick={() => crumb.view && setActiveView(crumb.view)}
+                //onClick={() => crumb.view && setActiveView(crumb.view)}
               >
                 {crumb.label}
               </Link>
             )
           )}
         </Breadcrumbs>
-
-        {renderContent()}
-
+        {children}
         <Snackbar
           open={!!successMessage}
           autoHideDuration={3000}
@@ -164,4 +123,6 @@ export default function Dashboard() {
       </Box>
     </Box>
   );
-}
+};
+
+export default Layout;

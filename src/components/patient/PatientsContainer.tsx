@@ -124,12 +124,8 @@ const PatientsContainer: React.FC<Props> = ({
             <>
               <PatientsTable
                 patients={patients}
-                onEdit={(p: BackendPatient) =>
-                  console.log("Edit patient:", p)
-                }
-                onDelete={(id: number) =>
-                  console.log("Delete patient:", id)
-                }
+                onEdit={(p: BackendPatient) => console.log("Edit patient:", p)}
+                onDelete={(id: number) => console.log("Delete patient:", id)}
                 onSelect={(id: number) => {
                   setSelectedPatientId(id);
                   if (onSelectPatient) onSelectPatient(id);
@@ -158,4 +154,3 @@ const PatientsContainer: React.FC<Props> = ({
 };
 
 export default PatientsContainer;
-

@@ -26,7 +26,7 @@ const getInitials = (name?: string) => {
     .toUpperCase();
 };
 
-const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
+const MedicalRecordInfo: React.FC<Props> = ({record, onEdit}) => {//{ record, onEdit }
   if (!record) {
     return (
       <Card sx={{ p: 3, textAlign: "center" }}>
@@ -36,7 +36,11 @@ const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
       </Card>
     );
   }
-
+  const handleClick = () => {
+    console.log("click")
+    onEdit();
+  }
+  
   return (
     <Card sx={{ p: 4, borderRadius: 2, boxShadow: 3 }}>
       <CardContent>
@@ -44,13 +48,13 @@ const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
           <Typography variant="h5" fontWeight="bold">
             🩺 Zdravstveni karton
           </Typography>
-          <Button variant="outlined" color="primary" onClick={onEdit}>
+          <Button variant="outlined" color="primary" onClick={() => handleClick()}>
             Edit medical record
           </Button>
         </Box>
 
         <Grid container columnSpacing={3} columns={{ xs: 4, sm: 8, md: 12 }}>
-          <Grid item xs={12} sm={4}>
+          <Grid > {/**item xs={12} sm={4} */}
             <Stack direction="row" spacing={2} alignItems="center" mb={2}>
               <Avatar sx={{ bgcolor: "primary.main", width: 72, height: 72 }}>
                 {getInitials(record.patient?.user?.name)}
@@ -79,7 +83,7 @@ const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
             </Typography>
           </Grid>
 
-          <Grid item xs={12} sm={4}>
+          <Grid> {/**item xs={12} sm={4} */}
             <Stack direction="row" spacing={2} alignItems="center" mb={2}>
               <Avatar sx={{ bgcolor: "secondary.main", width: 72, height: 72 }}>
                 {getInitials(record.doctor?.user?.name)}

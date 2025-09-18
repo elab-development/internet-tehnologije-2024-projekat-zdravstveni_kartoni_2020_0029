@@ -1,20 +1,25 @@
-import { 
-  Box, 
+import {
+  Box,
   Typography,
   Avatar,
   Paper,
   Divider,
   Button,
-  Stack
-} from '@mui/material'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/useAuth'; // Izmenjen import put
+  Stack,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/useAuth"; // Izmenjen import put
+import {
+  adminMenuItems,
+  doctorMenuItems,
+  patientMenuItems,
+} from "../constants/leftsideitems";
 
 type Props = {
   onSelect: (component: string) => void;
   activeView: string;
-  onFetchAppointments?: () => void; 
-}
+  onFetchAppointments?: () => void;
+};
 
 const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
   const navigate = useNavigate();
@@ -23,11 +28,10 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
   const displayName = user?.name?.trim() || "Admin";
   const displayEmail = user?.email || "—";
 
-  const initials =
-    (displayName.match(/\b\p{L}/gu) ?? ["?"])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase();
+  const initials = (displayName.match(/\b\p{L}/gu) ?? ["?"])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   const handleLogout = async () => {
     try {
@@ -37,6 +41,13 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
       console.error("Error during logout:", error);
     }
   };
+
+  const menuItems =
+    user?.role === "admin"
+      ? adminMenuItems
+      : user?.role === "doctor"
+      ? doctorMenuItems
+      : patientMenuItems;
 
   return (
     <Paper
@@ -58,7 +69,12 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
       </Box>
 
       <Box
-        sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 3 }}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          mb: 3,
+        }}
       >
         <Avatar
           sx={{
@@ -79,7 +95,7 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
         <Typography variant="subtitle2" color="text.secondary">
           {displayEmail}
         </Typography>
-        
+
         {/* Prikaz uloge korisnika */}
         <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
           {user?.role || "—"}
@@ -89,7 +105,7 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
       <Divider sx={{ my: 2 }} />
 
       <Stack spacing={1} sx={{ mb: 3 }}>
-        <Button
+        {/*<Button
           fullWidth
           variant={activeView === "doctors" ? "contained" : "outlined"}
           onClick={() => onSelect("doctors")}
@@ -115,7 +131,22 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
           sx={{ justifyContent: "flex-start" }}
         >
           Appointments
-        </Button>
+        </Button>*/}
+
+        {menuItems?.map((x) => (
+          <Button
+            key={x.link}
+            fullWidth
+            variant={activeView === x.link ? "contained" : "outlined"}
+            onClick={() => {
+              onSelect(x.link);
+              //onFetchAppointments?.();
+            }}
+            sx={{ justifyContent: "flex-start" }}
+          >
+            {x.label}
+          </Button>
+        ))}
       </Stack>
 
       <Box sx={{ mt: "auto" }}>
@@ -125,7 +156,7 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
           onClick={handleLogout}
           disabled={loading} // Onemogući dugme tokom logout-a
         >
-          {loading ? 'Odjavljivanje...' : 'Log out'}
+          {loading ? "Odjavljivanje..." : "Log out"}
         </Button>
       </Box>
     </Paper>
@@ -133,8 +164,3 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
 };
 
 export default LeftSidebar;
-
-
-
-
-
