@@ -13,7 +13,8 @@ import Patients from "../components/patient/PatientsInfo";
 import AddPatient from "../components/patient/addPatient";
 import Doctors from "../components/doctors/DoctorsInfo";
 import AddDoctor from "../components/doctors/addDoctor";
-import AppoitmentInfo from "../components/AppoitmentsInfo";
+import AppoitmentInfo from "../components/appointments/AppoitmentsInfo";
+import AddAppointment from "../components/appointments/AddAppointment";
 import { useAuth } from "../auth/useAuth";
 import { useState } from "react";
 
@@ -21,7 +22,6 @@ export default function Dashboard() {
   const [activeView, setActiveView] = useState("patients");
   const { isAuthenticated, loading } = useAuth();
 
-  // 👇 state za snackbar
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   if (loading) {
@@ -37,7 +37,6 @@ export default function Dashboard() {
     return <Navigate to="/login" replace />;
   }
 
-  // 👇 Breadcrumbs logika
   const getBreadcrumbs = () => {
     const crumbs: { label: string; view?: string }[] = [{ label: "", view: "patients" }];
 
@@ -59,6 +58,10 @@ export default function Dashboard() {
 
     if (activeView === "appointments") {
       crumbs.push({ label: "Appointments", view: "appointments" });
+    }
+    if (activeView === "addAppointment") {
+      crumbs.push({ label: "Appointments", view: "appointments" });
+      crumbs.push({ label: "New Appointment", view: "addAppointment" });
     }
 
     return crumbs;
@@ -91,7 +94,17 @@ export default function Dashboard() {
           />
         );
       case "appointments":
-        return <AppoitmentInfo />;
+        return <AppoitmentInfo onAddAppointment={() => setActiveView("addAppointment")} />;
+      case "addAppointment":
+        return (
+          <AddAppointment
+            onCancel={() => setActiveView("appointments")}
+            onSuccess={() => {
+              setActiveView("appointments");
+              setSuccessMessage("Appointment created successfully ✅");
+            }}
+          />
+        );
       default:
         return <Patients onAddPatient={() => setActiveView("addPatient")} />;
     }
@@ -101,7 +114,6 @@ export default function Dashboard() {
     <Box sx={{ display: "flex", height: "100vh" }}>
       <LeftSidebar onSelect={setActiveView} activeView={activeView} />
       <Box sx={{ flexGrow: 1, p: 4 }}>
-        {/* Breadcrumbs */}
         <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
           {getBreadcrumbs().map((crumb, idx) =>
             idx === getBreadcrumbs().length - 1 ? (
@@ -124,18 +136,13 @@ export default function Dashboard() {
 
         {renderContent()}
 
-        {/* Snackbar */}
         <Snackbar
           open={!!successMessage}
           autoHideDuration={3000}
           onClose={() => setSuccessMessage(null)}
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
-          <Alert
-            onClose={() => setSuccessMessage(null)}
-            severity="success"
-            sx={{ width: "100%" }}
-          >
+          <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: "100%" }}>
             {successMessage}
           </Alert>
         </Snackbar>
@@ -143,16 +150,3 @@ export default function Dashboard() {
     </Box>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -13,10 +13,11 @@ type Props = {
   open: boolean;
   onClose: () => void;
   record: any;
+  patientId?: number;
   onSuccess: () => void;
 };
 
-const MedicalRecordUpdate: React.FC<Props> = ({ open, onClose, record, onSuccess }) => {
+const MedicalRecordUpdate: React.FC<Props> = ({ open, onClose, record, patientId, onSuccess }) => {
   const [form, setForm] = useState({
     blood_type: "",
     allergies: "",
@@ -32,8 +33,15 @@ const MedicalRecordUpdate: React.FC<Props> = ({ open, onClose, record, onSuccess
         chronic_diseases: record.chronic_diseases || "",
         notes: record.notes || "",
       });
+    } else {
+      setForm({
+        blood_type: "",
+        allergies: "",
+        chronic_diseases: "",
+        notes: "",
+      });
     }
-  }, [record]);
+  }, [record, open]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -41,17 +49,24 @@ const MedicalRecordUpdate: React.FC<Props> = ({ open, onClose, record, onSuccess
 
   const handleSubmit = async () => {
     try {
-      await api.put(`/medical-records/${record.id}`, form);
+      if (record) {
+        await api.put(`/medical-records/${record.id}`, form);
+      } else {
+        await api.post(`/medical-records`, {
+          patient_id: patientId,
+          ...form,
+        });
+      }
       onSuccess();
       onClose();
     } catch (err) {
-      console.error("Greška pri izmeni kartona:", err);
+      console.error("Greška pri (izmeni/kreiranju) kartona:", err);
     }
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Izmena zdravstvenog kartona</DialogTitle>
+      <DialogTitle>{record ? "Izmena zdravstvenog kartona" : "Kreiranje zdravstvenog kartona"}</DialogTitle>
       <DialogContent>
         <TextField
           label="Krvna grupa"
@@ -82,18 +97,14 @@ const MedicalRecordUpdate: React.FC<Props> = ({ open, onClose, record, onSuccess
           name="notes"
           fullWidth
           margin="normal"
-          multiline
-          rows={3}
           value={form.notes}
           onChange={handleChange}
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} variant="outlined">
-          Otkaži
-        </Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary">
-          Sačuvaj
+        <Button onClick={onClose}>Otkaži</Button>
+        <Button variant="contained" onClick={handleSubmit}>
+          {record ? "Sačuvaj" : "Kreiraj"}
         </Button>
       </DialogActions>
     </Dialog>

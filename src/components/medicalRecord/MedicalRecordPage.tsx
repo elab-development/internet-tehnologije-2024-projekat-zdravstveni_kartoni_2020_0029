@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Box, CircularProgress, Typography, Paper } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  Typography,
+  Paper,
+  Button,
+} from "@mui/material";
 import { useRecords } from "./hooks/useRecords";
 import MedicalRecordInfo from "./MedicalRecordInfo";
 import MedicalRecordUpdate from "./MedicalRecordUpdate";
@@ -11,12 +17,29 @@ type Props = {
 const MedicalRecordPage: React.FC<Props> = ({ patientId }) => {
   const { record, loading, error, fetchRecord } = useRecords();
   const [editOpen, setEditOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
     if (patientId) {
       fetchRecord(patientId);
     }
-  }, [patientId]);
+  }, [patientId, fetchRecord]);
+
+  const handleEditOpen = () => setEditOpen(true);
+  const handleEditClose = () => setEditOpen(false);
+
+  const handleAddOpen = () => setAddOpen(true);
+  const handleAddClose = () => setAddOpen(false);
+
+  const onEditSuccess = () => {
+    fetchRecord(patientId);
+    handleEditClose();
+  };
+
+  const onAddSuccess = () => {
+    fetchRecord(patientId);
+    handleAddClose();
+  };
 
   return (
     <Box
@@ -40,31 +63,41 @@ const MedicalRecordPage: React.FC<Props> = ({ patientId }) => {
           <Typography align="center" gutterBottom>
             Karton nije kreiran za ovog pacijenta.
           </Typography>
+          <Button variant="contained" color="primary" onClick={handleAddOpen}>
+            Kreiraj karton
+          </Button>
         </Paper>
       )}
 
       {/* Prava greška */}
       {!loading && error && error !== "NOT_FOUND" && (
-        <Paper sx={{ p: 3, borderRadius: 2, bgcolor: "#ffe6e6", mt: 2 }}>
+        <Paper sx={{ p: 3, borderRadius: 2, bgcolor: "#f8d7da", mt: 2 }}>
           <Typography color="error" align="center">
             {error}
           </Typography>
         </Paper>
       )}
 
-      {/* Karton */}
+      {/* Prikaz kartona */}
       {!loading && !error && record && (
-        <Box sx={{ width: "100%", maxWidth: "1200px" }}>
-          <MedicalRecordInfo record={record} onEdit={() => setEditOpen(true)} />
-        </Box>
+        <MedicalRecordInfo record={record} onEdit={handleEditOpen} />
       )}
 
-      {/* Modal za izmenu */}
+      {/* Modal za editovanje */}
       <MedicalRecordUpdate
         open={editOpen}
-        onClose={() => setEditOpen(false)}
+        onClose={handleEditClose}
         record={record}
-        onSuccess={() => fetchRecord(patientId)}
+        onSuccess={onEditSuccess}
+      />
+
+      {/* Modal za dodavanje */}
+      <MedicalRecordUpdate
+        open={addOpen}
+        onClose={handleAddClose}
+        record={null}
+        patientId={patientId}
+        onSuccess={onAddSuccess}
       />
     </Box>
   );
