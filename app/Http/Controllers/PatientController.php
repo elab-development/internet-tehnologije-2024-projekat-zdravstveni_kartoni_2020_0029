@@ -91,68 +91,66 @@ class PatientController extends Controller
 
     // Kreiranje novog pacijenta (samo admin)
    public function store(Request $request)
-{
-    $authUser = Auth::user();
+    {
+        $authUser = Auth::user();
 
-    if (!$authUser || !in_array($authUser->role, ['admin', 'doctor'])) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Samo administrator ili doktor mogu kreirati pacijente'
-        ], 403);
-    }
+        // dozvoljeno samo adminu i doktoru
+        if (!$authUser || !in_array($authUser->role, ['admin', 'doctor'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Samo administrator ili doktor mogu kreirati pacijente'
+            ], 403);
+        }
 
-    $validator = Validator::make($request->all(), [
-        'name'          => 'required|string|max:255',
-        'email'         => 'required|email|unique:users,email',
-        'password'      => 'required|string|min:8',
-        'jmbg'          => 'required|string|size:13|unique:patients,jmbg',
-        'date_of_birth' => 'required|date',
-        'gender'        => 'required|in:male,female,other',
-        'doctor_id'     => 'nullable|exists:doctors,id',
-        'blood_type'    => 'required_with:doctor_id|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-    ]);
+        $validator = Validator::make($request->all(), [
+            'name'          => 'required|string|max:255',
+            'email'         => 'required|email|unique:users,email',
+            'password'      => 'required|string|min:8',
+            'jmbg'          => 'required|string|size:13|unique:patients,jmbg',
+            'date_of_birth' => 'required|date',
+            'gender'        => 'required|in:male,female,other',
 
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'errors'  => $validator->errors()
-        ], 422);
-    }
-
-    $user = \App\Models\User::create([
-        'name'     => $request->name,
-        'email'    => $request->email,
-        'password' => bcrypt($request->password),
-        'role'     => 'patient',
-    ]);
-
-    $patient = \App\Models\Patient::create([
-        'user_id'       => $user->id,
-        'jmbg'          => $request->jmbg,
-        'date_of_birth' => $request->date_of_birth,
-        'gender'        => $request->gender,
-    ]);
-
-    $medicalRecord = null;
-    if ($request->has('doctor_id')) {
-        $medicalRecord = \App\Models\MedicalRecord::create([
-            'patient_id'       => $patient->id,
-            'doctor_id'        => $request->doctor_id,
-            'blood_type'       => $request->blood_type,
-            'allergies'        => '',
-            'chronic_diseases' => '',
-            'opening_date'     => now()->format('Y-m-d'),
-            'notes'            => '',
+            // dodatno za karton
+            'doctor_id'     => 'nullable|exists:doctors,id',
+            'blood_type'    => 'required_with:doctor_id|in:A+,A-,B+,B-,AB+,AB-,O+,O-', 
         ]);
-    }
 
-    return response()->json([
-        'success' => true,
-        'data'    => $patient->load('user')->loadMissing('medicalRecord.doctor.user'),
-        'message' => 'Pacijent uspešno kreiran' . ($medicalRecord ? ' sa kartonom' : ''),
-    ], 201);
-}
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors()
+            ], 422);
+        }
 
+        // 1. Kreiraj User-a sa ulogom pacijenta
+        $user = \App\Models\User::create([
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => bcrypt($request->password),
+            'role'     => 'patient',
+        ]);
+
+        // 2. Kreiraj Pacijenta vezanog za user-a
+        $patient = \App\Models\Patient::create([
+            'user_id'       => $user->id,
+            'jmbg'          => $request->jmbg,
+            'date_of_birth' => $request->date_of_birth,
+            'gender'        => $request->gender,
+        ]);
+
+        // 3. Ako je prosleđen doctor_id → kreiraj MedicalRecord
+        $medicalRecord = null;
+        if ($request->has('doctor_id')) {
+            $medicalRecord = \App\Models\MedicalRecord::create([
+                'patient_id'       => $patient->id,
+                'doctor_id'        => $request->doctor_id,
+                'blood_type'       => $request->blood_type, // obavezno kad ide karton
+                'allergies'        => null,
+                'chronic_diseases' => null,
+                'opening_date'     => now()->format('Y-m-d'),
+                'notes'            => null,
+            ]);
+        }
 
         return response()->json([
             'success' => true,
@@ -264,11 +262,12 @@ class PatientController extends Controller
         $query = Patient::with(['user', 'medicalRecord.doctor.user'])
             ->when($searchDoctorName, function ($q) use ($searchDoctorName) {
                 $q->whereHas('medicalRecord.doctor.user', function ($sub) use ($searchDoctorName) {
-                    $sub->where('name', 'like', $searchDoctorName . '%'); // 👈 samo početak imena
+                    // Pretraga bilo gde u imenu, ne samo na početku
+                    $sub->where('name', 'like', '%' . $searchDoctorName . '%');
                 });
             });
 
-
+        // Admin vidi sve pacijente
         if ($user->isAdmin()) {
             return response()->json([
                 'success' => true,
@@ -276,9 +275,19 @@ class PatientController extends Controller
             ]);
         }
 
+        // Doktor vidi samo svoje pacijente
         if ($user->isDoctor()) {
-            $patients = $query->whereHas('medicalRecord', function ($q) use ($user) {
-                $q->where('doctor_id', $user->doctorProfile->id);
+            $doctorId = optional($user->doctorProfile)->id;
+
+            if (!$doctorId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Doktor nema definisan profil'
+                ], 400);
+            }
+
+            $patients = $query->whereHas('medicalRecord', function ($q) use ($doctorId) {
+                $q->where('doctor_id', $doctorId);
             })->paginate($perPage);
 
             return response()->json([
@@ -287,11 +296,13 @@ class PatientController extends Controller
             ]);
         }
 
+        // Ostali korisnici nemaju pristup
         return response()->json([
             'success' => false,
             'message' => 'Nemate ovlašćenje za pristup listi pacijenata'
         ], 403);
     }
+
 
 
 }
