@@ -8,11 +8,13 @@ import {
   Divider,
   Avatar,
   Stack,
+  Button,
   Chip,
 } from "@mui/material";
 
 type Props = {
   record: any;
+  onEdit: () => void;
 };
 
 const getInitials = (name?: string) => {
@@ -24,7 +26,7 @@ const getInitials = (name?: string) => {
     .toUpperCase();
 };
 
-const MedicalRecordInfo: React.FC<Props> = ({ record }) => {
+const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
   if (!record) {
     return (
       <Card sx={{ p: 3, textAlign: "center" }}>
@@ -38,20 +40,17 @@ const MedicalRecordInfo: React.FC<Props> = ({ record }) => {
   return (
     <Card sx={{ p: 4, borderRadius: 2, boxShadow: 3 }}>
       <CardContent>
-        {/* Naslov */}
-        <Typography
-          variant="h5"
-          gutterBottom
-          fontWeight="bold"
-          sx={{ mb: 4, textAlign: "center" }}
-        >
-          🩺 Zdravstveni karton
-        </Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+          <Typography variant="h5" fontWeight="bold">
+            🩺 Zdravstveni karton
+          </Typography>
+          <Button variant="outlined" color="primary" onClick={onEdit}>
+            Edit medical record
+          </Button>
+        </Box>
 
-        {/* Red: Pacijent i Doktor */}
-        <Grid container spacing={3}>
-          {/* Pacijent */}
-          <Grid item xs={12} md={6}>
+        <Grid container columnSpacing={3} columns={{ xs: 4, sm: 8, md: 12 }}>
+          <Grid item xs={12} sm={4}>
             <Stack direction="row" spacing={2} alignItems="center" mb={2}>
               <Avatar sx={{ bgcolor: "primary.main", width: 72, height: 72 }}>
                 {getInitials(record.patient?.user?.name)}
@@ -80,8 +79,7 @@ const MedicalRecordInfo: React.FC<Props> = ({ record }) => {
             </Typography>
           </Grid>
 
-          {/* Doktor */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} sm={4}>
             <Stack direction="row" spacing={2} alignItems="center" mb={2}>
               <Avatar sx={{ bgcolor: "secondary.main", width: 72, height: 72 }}>
                 {getInitials(record.doctor?.user?.name)}
@@ -105,21 +103,28 @@ const MedicalRecordInfo: React.FC<Props> = ({ record }) => {
           </Grid>
         </Grid>
 
-        {/* Detalji kartona */}
         <Box mt={4}>
           <Typography variant="subtitle2" color="text.secondary" gutterBottom>
             Detalji kartona
           </Typography>
           <Divider sx={{ mb: 2 }} />
           <Stack spacing={1}>
-            <Typography>
-              <b>Krvna grupa:</b>{" "}
+            <Box>
+              <Typography component="span" fontWeight="bold">
+                Krvna grupa:
+              </Typography>{" "}
               {record.blood_type ? (
-                <Chip label={record.blood_type} color="primary" size="small" />
+                <Chip
+                  label={record.blood_type}
+                  color="primary"
+                  size="small"
+                  sx={{ ml: 1 }}
+                />
               ) : (
                 <span style={{ color: "gray" }}>Nema podataka</span>
               )}
-            </Typography>
+            </Box>
+
             <Typography>
               <b>Alergije:</b>{" "}
               {record.allergies || (

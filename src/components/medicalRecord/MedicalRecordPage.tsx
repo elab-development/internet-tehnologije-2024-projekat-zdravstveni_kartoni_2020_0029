@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
-import { Box, CircularProgress, Typography, Paper, Button } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, CircularProgress, Typography, Paper } from "@mui/material";
 import { useRecords } from "./hooks/useRecords";
 import MedicalRecordInfo from "./MedicalRecordInfo";
+import MedicalRecordUpdate from "./MedicalRecordUpdate";
 
 type Props = {
   patientId: number;
@@ -9,6 +10,7 @@ type Props = {
 
 const MedicalRecordPage: React.FC<Props> = ({ patientId }) => {
   const { record, loading, error, fetchRecord } = useRecords();
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     if (patientId) {
@@ -38,13 +40,6 @@ const MedicalRecordPage: React.FC<Props> = ({ patientId }) => {
           <Typography align="center" gutterBottom>
             Karton nije kreiran za ovog pacijenta.
           </Typography>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={() => console.log("Otvori formu za kreiranje kartona")}
-          >
-            Kreiraj karton
-          </Button>
         </Paper>
       )}
 
@@ -57,13 +52,20 @@ const MedicalRecordPage: React.FC<Props> = ({ patientId }) => {
         </Paper>
       )}
 
-
       {/* Karton */}
       {!loading && !error && record && (
         <Box sx={{ width: "100%", maxWidth: "1200px" }}>
-          <MedicalRecordInfo record={record} />
+          <MedicalRecordInfo record={record} onEdit={() => setEditOpen(true)} />
         </Box>
       )}
+
+      {/* Modal za izmenu */}
+      <MedicalRecordUpdate
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        record={record}
+        onSuccess={() => fetchRecord(patientId)}
+      />
     </Box>
   );
 };

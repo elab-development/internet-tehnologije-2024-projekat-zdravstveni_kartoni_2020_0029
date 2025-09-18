@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PatientsTable, { BackendPatient } from "./PatientsTable";
 import MedicalRecordInfo from "../medicalRecord/MedicalRecordInfo";
+import MedicalRecordUpdate from "../medicalRecord/MedicalRecordUpdate";
 import { usePatients } from "./hooks/usePatients";
 import { useRecords } from "../medicalRecord/hooks/useRecords";
 import {
@@ -34,12 +35,18 @@ const PatientsContainer: React.FC<Props> = ({
     totalPages,
   } = usePatients();
 
-  const { record, loading: recordLoading, error: recordError, fetchRecord } =
-    useRecords();
+  const {
+    record,
+    loading: recordLoading,
+    error: recordError,
+    fetchRecord,
+  } = useRecords();
 
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(
     externalSelectedId || null
   );
+
+  const [editOpen, setEditOpen] = useState(false); // ⬅️ Dodato za modal
 
   useEffect(() => {
     fetchPatients();
@@ -53,8 +60,11 @@ const PatientsContainer: React.FC<Props> = ({
 
   const handleBack = () => {
     setSelectedPatientId(null);
-    if (onSelectPatient) onSelectPatient(0); // reset u dashboard
+    if (onSelectPatient) onSelectPatient(0);
   };
+
+  const handleEditOpen = () => setEditOpen(true); // ⬅️ Otvori modal
+  const handleEditClose = () => setEditOpen(false); // ⬅️ Zatvori modal
 
   return (
     <Box sx={{ p: 3 }}>
@@ -79,7 +89,19 @@ const PatientsContainer: React.FC<Props> = ({
           )}
 
           {!recordLoading && !recordError && record && (
-            <MedicalRecordInfo record={record} />
+            <>
+              <MedicalRecordInfo record={record} onEdit={handleEditOpen} />
+
+              <MedicalRecordUpdate
+                open={editOpen}
+                onClose={handleEditClose}
+                record={record}
+                onSuccess={() => {
+                  fetchRecord(record.patient_id);
+                  setEditOpen(false);
+                }}
+              />
+            </>
           )}
         </Box>
       ) : (
@@ -110,7 +132,7 @@ const PatientsContainer: React.FC<Props> = ({
                 }
                 onSelect={(id: number) => {
                   setSelectedPatientId(id);
-                  if (onSelectPatient) onSelectPatient(id); // 👈 javlja dashboardu
+                  if (onSelectPatient) onSelectPatient(id);
                 }}
               />
 
@@ -136,3 +158,4 @@ const PatientsContainer: React.FC<Props> = ({
 };
 
 export default PatientsContainer;
+
