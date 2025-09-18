@@ -135,7 +135,6 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
 
         {menuItems?.map((x) => (
           <Button
-            key={x.link}
             fullWidth
             variant={activeView === x.link ? "contained" : "outlined"}
             onClick={() => {
