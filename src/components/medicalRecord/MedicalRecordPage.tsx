@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
-import { Box, CircularProgress, Typography, Paper } from "@mui/material";
-import { useRecords } from "../components/medicalRecord/hooks/useRecords";
-import MedicalRecordInfo from "../components/medicalRecord/medicalRecordInfo";
+import { Box, CircularProgress, Typography, Paper, Button } from "@mui/material";
+import { useRecords } from "./hooks/useRecords";
+import MedicalRecordInfo from "./MedicalRecordInfo";
 
 type Props = {
   patientId: number;
@@ -10,7 +10,6 @@ type Props = {
 const MedicalRecordPage: React.FC<Props> = ({ patientId }) => {
   const { record, loading, error, fetchRecord } = useRecords();
 
-  // učitaj karton kada se promeni pacijent
   useEffect(() => {
     if (patientId) {
       fetchRecord(patientId);
@@ -33,14 +32,31 @@ const MedicalRecordPage: React.FC<Props> = ({ patientId }) => {
         </Box>
       )}
 
-      {/* Greška */}
-      {error && (
+      {/* Nema kartona */}
+      {!loading && error === "NOT_FOUND" && (
+        <Paper sx={{ p: 3, borderRadius: 2, bgcolor: "#fff3cd", mt: 2 }}>
+          <Typography align="center" gutterBottom>
+            Karton nije kreiran za ovog pacijenta.
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={() => console.log("Otvori formu za kreiranje kartona")}
+          >
+            Kreiraj karton
+          </Button>
+        </Paper>
+      )}
+
+      {/* Prava greška */}
+      {!loading && error && error !== "NOT_FOUND" && (
         <Paper sx={{ p: 3, borderRadius: 2, bgcolor: "#ffe6e6", mt: 2 }}>
           <Typography color="error" align="center">
             {error}
           </Typography>
         </Paper>
       )}
+
 
       {/* Karton */}
       {!loading && !error && record && (

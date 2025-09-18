@@ -6,128 +6,145 @@ import {
   Typography,
   Grid,
   Divider,
-  Chip,
+  Avatar,
   Stack,
-  Paper,
+  Chip,
 } from "@mui/material";
 
 type Props = {
-  record: any; // tip možeš detaljnije definisati
+  record: any;
+};
+
+const getInitials = (name?: string) => {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
 };
 
 const MedicalRecordInfo: React.FC<Props> = ({ record }) => {
   if (!record) {
     return (
-      <Paper sx={{ p: 3, textAlign: "center" }}>
+      <Card sx={{ p: 3, textAlign: "center" }}>
         <Typography variant="h6" color="text.secondary">
           Nema podataka o kartonu
         </Typography>
-      </Paper>
+      </Card>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Naslov */}
-      <Typography variant="h5" gutterBottom fontWeight="bold">
-        🩺 Zdravstveni karton
-      </Typography>
+    <Card sx={{ p: 4, borderRadius: 2, boxShadow: 3 }}>
+      <CardContent>
+        {/* Naslov */}
+        <Typography
+          variant="h5"
+          gutterBottom
+          fontWeight="bold"
+          sx={{ mb: 4, textAlign: "center" }}
+        >
+          🩺 Zdravstveni karton
+        </Typography>
 
-      <Grid container spacing={3}>
-        {/* Pacijent */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={4} sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Pacijent
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Stack spacing={1}>
-                <Typography>
-                  <b>Ime i prezime:</b> {record.patient?.user?.name}
+        {/* Red: Pacijent i Doktor */}
+        <Grid container spacing={3}>
+          {/* Pacijent */}
+          <Grid item xs={12} md={6}>
+            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+              <Avatar sx={{ bgcolor: "primary.main", width: 72, height: 72 }}>
+                {getInitials(record.patient?.user?.name)}
+              </Avatar>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Pacijent
                 </Typography>
-                <Typography>
-                  <b>Email:</b> {record.patient?.user?.email}
+                <Typography variant="h6" fontWeight="bold">
+                  {record.patient?.user?.name}
                 </Typography>
-                <Typography>
-                  <b>JMBG:</b> {record.patient?.jmbg}
+                <Typography color="text.secondary" fontSize={14}>
+                  {record.patient?.user?.email}
                 </Typography>
-                <Typography>
-                  <b>Datum rođenja:</b> {record.patient?.date_of_birth}
+              </Box>
+            </Stack>
+            <Divider sx={{ mb: 2 }} />
+            <Typography>
+              <b>JMBG:</b> {record.patient?.jmbg}
+            </Typography>
+            <Typography>
+              <b>Datum rođenja:</b> {record.patient?.date_of_birth}
+            </Typography>
+            <Typography>
+              <b>Pol:</b> {record.patient?.gender}
+            </Typography>
+          </Grid>
+
+          {/* Doktor */}
+          <Grid item xs={12} md={6}>
+            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+              <Avatar sx={{ bgcolor: "secondary.main", width: 72, height: 72 }}>
+                {getInitials(record.doctor?.user?.name)}
+              </Avatar>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Doktor
                 </Typography>
-                <Typography>
-                  <b>Pol:</b> {record.patient?.gender}
+                <Typography variant="h6" fontWeight="bold">
+                  {record.doctor?.user?.name}
                 </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
+                <Typography color="text.secondary" fontSize={14}>
+                  {record.doctor?.user?.email}
+                </Typography>
+              </Box>
+            </Stack>
+            <Divider sx={{ mb: 2 }} />
+            <Typography>
+              <b>Specijalizacija:</b> {record.doctor?.specialization}
+            </Typography>
+          </Grid>
         </Grid>
 
-        {/* Doktor */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={4} sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Izabrani lekar
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Stack spacing={1}>
-                <Typography>
-                  <b>Ime i prezime:</b> {record.doctor?.user?.name}
-                </Typography>
-                <Typography>
-                  <b>Email:</b> {record.doctor?.user?.email}
-                </Typography>
-                <Typography>
-                  <b>Specijalizacija:</b> {record.doctor?.specialization}
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Informacije o kartonu */}
-        <Grid item xs={12}>
-          <Card elevation={4} sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Detalji kartona
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Stack spacing={1}>
-                <Typography>
-                  <b>Krvna grupa:</b>{" "}
-                  <Chip label={record.blood_type} color="primary" />
-                </Typography>
-                <Typography>
-                  <b>Alergije:</b>{" "}
-                  {record.allergies || (
-                    <span style={{ color: "gray" }}>Nema podataka</span>
-                  )}
-                </Typography>
-                <Typography>
-                  <b>Hronične bolesti:</b>{" "}
-                  {record.chronic_diseases || (
-                    <span style={{ color: "gray" }}>Nema podataka</span>
-                  )}
-                </Typography>
-                <Typography>
-                  <b>Otvoren:</b> {record.opening_date}
-                </Typography>
-                <Typography>
-                  <b>Napomene:</b>{" "}
-                  {record.notes || (
-                    <span style={{ color: "gray" }}>Nema unetih napomena</span>
-                  )}
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Pregledi */}
-      </Grid>
-    </Box>
+        {/* Detalji kartona */}
+        <Box mt={4}>
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            Detalji kartona
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+          <Stack spacing={1}>
+            <Typography>
+              <b>Krvna grupa:</b>{" "}
+              {record.blood_type ? (
+                <Chip label={record.blood_type} color="primary" size="small" />
+              ) : (
+                <span style={{ color: "gray" }}>Nema podataka</span>
+              )}
+            </Typography>
+            <Typography>
+              <b>Alergije:</b>{" "}
+              {record.allergies || (
+                <span style={{ color: "gray" }}>Nema podataka</span>
+              )}
+            </Typography>
+            <Typography>
+              <b>Hronične bolesti:</b>{" "}
+              {record.chronic_diseases || (
+                <span style={{ color: "gray" }}>Nema podataka</span>
+              )}
+            </Typography>
+            <Typography>
+              <b>Otvoren:</b> {record.opening_date}
+            </Typography>
+            <Typography sx={{ whiteSpace: "pre-wrap" }}>
+              <b>Napomene:</b>{" "}
+              {record.notes || (
+                <span style={{ color: "gray" }}>Nema unetih napomena</span>
+              )}
+            </Typography>
+          </Stack>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 

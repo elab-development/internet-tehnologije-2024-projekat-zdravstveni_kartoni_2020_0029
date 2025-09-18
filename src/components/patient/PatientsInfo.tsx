@@ -133,7 +133,7 @@ const Patients = ({ onAddPatient }: { onAddPatient: () => void }) => {
         onConfirm={handleDeleteConfirm}
       />
 
-      {patientToEdit && (
+            {patientToEdit && (
         <PatientUpdate
           open={editDialogOpen}
           patient={patientToEdit}
@@ -147,3 +147,4 @@ const Patients = ({ onAddPatient }: { onAddPatient: () => void }) => {
 };
 
 export default Patients;
+

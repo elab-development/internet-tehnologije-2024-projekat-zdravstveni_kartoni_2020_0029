@@ -19,18 +19,27 @@ export const useRecords = () => {
         raw = JSON.parse(raw);
       }
 
-      if (raw.success) {
+      if (raw.success && raw.data) {
         setRecord(raw.data);
       } else {
-        setError(raw.message || "Greška prilikom učitavanja kartona");
+        setRecord(null);
+        setError("NOT_FOUND");
       }
     } catch (err: any) {
       console.error("API greška:", err);
-      setError("Greška prilikom komunikacije sa serverom");
+
+      if (err.response?.status === 404) {
+        // 👇 pacijent nema karton
+        setRecord(null);
+        setError("NOT_FOUND");
+      } else {
+        setError("Greška prilikom učitavanja kartona");
+      }
     } finally {
       setLoading(false);
     }
   };
+
 
   return {
     record,

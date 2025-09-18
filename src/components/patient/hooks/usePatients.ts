@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../../../auth/api";
-import { useDebounce } from "use-debounce"; // ako koristiš custom debounce hook
+import { useDebounce } from "use-debounce";
 
 export const usePatients = () => {
   const [patients, setPatients] = useState<any[]>([]);
@@ -12,15 +12,13 @@ export const usePatients = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   // search states
-  const [search, setSearch] = useState("");               // pacijent search
-  const [doctorSearch, setDoctorSearch] = useState("");   // doktor search
-
+  const [search, setSearch] = useState("");
+  const [doctorSearch, setDoctorSearch] = useState("");
   const [specialization, setSpecialization] = useState("");
 
-  // debounce values (da se ne šalje zahtev na svako kucanje)
+  // debounce values
   const [debouncedSearch] = useDebounce(search, 300);
   const [debouncedDoctorSearch] = useDebounce(doctorSearch, 300);
-
 
   // delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -60,12 +58,94 @@ export const usePatients = () => {
     }
   };
 
-  // auto-fetch kad se promeni search ili stranica
   useEffect(() => {
     fetchPatients();
   }, [debouncedSearch, debouncedDoctorSearch, page]);
 
-  // delete handlers
+  // ADD patient
+  const addPatient = async (data: {
+    name: string;
+    email: string;
+    password: string;
+    jmbg: string;
+    date_of_birth: string;
+    gender: "male" | "female" | "other";
+    doctor_id?: number;
+    blood_type?: string;
+  }) => {
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const res = await api.post("/patients", data);
+
+      let raw = res.data;
+      if (typeof raw === "string") {
+        raw = raw.replace(/^\uFEFF/, "");
+        raw = JSON.parse(raw);
+      }
+
+      if (raw.success) {
+        setPatients((prev) => [raw.data, ...prev]); // dodaj novog pacijenta na listu
+        setNewPatientId(raw.data.id);
+        setSuccessMsg(raw.message || "Pacijent uspešno kreiran");
+      } else {
+        setError("Neuspešan pokušaj kreiranja pacijenta");
+      }
+    } catch (err: any) {
+      console.error("Greška prilikom dodavanja pacijenta:", err);
+      setError(
+        err.response?.data?.message || "Greška prilikom dodavanja pacijenta"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // UPDATE patient
+  const updatePatient = async (
+    id: number,
+    data: {
+      name?: string;
+      email?: string;
+      jmbg?: string;
+      date_of_birth?: string;
+      gender?: "male" | "female" | "other";
+    }
+  ) => {
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const res = await api.put(`/patients/${id}`, data);
+
+      let raw = res.data;
+      if (typeof raw === "string") {
+        raw = raw.replace(/^\uFEFF/, "");
+        raw = JSON.parse(raw);
+      }
+
+      if (raw.success) {
+        setSuccessMsg("Pacijent je uspešno izmenjen");
+        setPatients((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, ...raw.data } : p))
+        );
+      } else {
+        setError("Neuspešan pokušaj izmene pacijenta");
+      }
+    } catch (err: any) {
+      console.error("Greška prilikom izmene pacijenta:", err);
+      setError(
+        err.response?.data?.message || "Greška prilikom izmene pacijenta"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // DELETE patient
   const handleDeleteClick = (id: number) => {
     setPatientToDelete(id);
     setDeleteDialogOpen(true);
@@ -95,26 +175,29 @@ export const usePatients = () => {
     setNewPatientId("");
   };
 
-  // update patient (stub — izmeni po tvojoj logici)
-  const updatePatient = async (id: number, data: any) => {
-    try {
-      await api.put(`/patients/${id}`, data);
-      setSuccessMsg("Pacijent je uspešno izmenjen");
-      fetchPatients(); // osveži listu
-    } catch (err: any) {
-      console.error("Greška prilikom izmene pacijenta:", err);
-      setError("Greška prilikom izmene pacijenta");
-    }
-  };
-
   return {
-    patients, loading, error, successMsg,
-    page, setPage, totalPages,
-    search, setSearch,
-    doctorSearch, setDoctorSearch,   // 👈 sad imaš oba search state-a
-    specialization, setSpecialization,
-    deleteDialogOpen, patientToDelete, newPatientId, setNewPatientId,
-    handleDeleteClick, handleDeleteConfirm, handleDeleteCancel,
-    updatePatient, fetchPatients
+    patients,
+    loading,
+    error,
+    successMsg,
+    page,
+    setPage,
+    totalPages,
+    search,
+    setSearch,
+    doctorSearch,
+    setDoctorSearch,
+    specialization,
+    setSpecialization,
+    deleteDialogOpen,
+    patientToDelete,
+    newPatientId,
+    setNewPatientId,
+    handleDeleteClick,
+    handleDeleteConfirm,
+    handleDeleteCancel,
+    fetchPatients,
+    addPatient,
+    updatePatient, // 👈 sad ima i date_of_birth podršku
   };
 };

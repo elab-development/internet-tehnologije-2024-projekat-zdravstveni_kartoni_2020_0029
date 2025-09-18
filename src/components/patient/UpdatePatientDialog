@@ -1,0 +1,28 @@
+import React from "react";
+import { Dialog } from "@mui/material";
+import PatientUpdate from "./PatientUpdate";
+
+type Props = {
+  open: boolean;
+  patient: any;
+  onCancel: () => void;
+  onSuccess: () => void;
+  updatePatient: (id: number, data: any) => Promise<void>;
+};
+
+const UpdatePatientDialog: React.FC<Props> = ({ open, patient, onCancel, onSuccess, updatePatient }) => {
+  return (
+    <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
+      {patient && (
+        <PatientUpdate
+          patient={patient}
+          onCancel={onCancel}
+          onSuccess={onSuccess}
+          updatePatient={updatePatient}
+        />
+      )}
+    </Dialog>
+  );
+};
+
+export default UpdatePatientDialog;

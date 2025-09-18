@@ -37,7 +37,7 @@ type Props = {
   patients: BackendPatient[];
   onEdit: (patient: BackendPatient) => void;
   onDelete: (id: number) => void;
-  onSelect: (id: number) => void;
+  onSelect: (recordId: number) => void; // sada prima recordId
 };
 
 const PatientsTable: React.FC<Props> = ({
@@ -64,8 +64,10 @@ const PatientsTable: React.FC<Props> = ({
           <TableRow
             key={p.id}
             hover
-            sx={{ cursor: "pointer" }}
-            onClick={() => onSelect(p.id)} // klik na red otvara karton
+            sx={{ cursor: p.medical_record ? "pointer" : "default" }}
+            onClick={() =>
+              p.medical_record && onSelect(p.medical_record.id) // ✅ sada šalje record.id
+            }
           >
             <TableCell>{p.id}</TableCell>
             <TableCell>{p.user?.name || "N/A"}</TableCell>

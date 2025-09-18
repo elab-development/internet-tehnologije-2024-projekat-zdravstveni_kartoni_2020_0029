@@ -7,9 +7,10 @@ import {
   MenuItem,
   Paper,
   Autocomplete,
+  Alert,
 } from "@mui/material";
-import { api } from "../../auth/api";
-import { useDoctors } from "../doctors/hooks/useDoctors"; // 👈 koristi tvoj hook
+import { useDoctors } from "../doctors/hooks/useDoctors";
+import { usePatients } from "./hooks/usePatients"; // 👈 koristi hook
 
 type Props = {
   onCancel: () => void;
@@ -20,6 +21,7 @@ const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 const AddPatient = ({ onCancel, onSuccess }: Props) => {
   const { doctors, setSearch } = useDoctors();
+  const { addPatient, loading, error, successMsg } = usePatients(); // 👈 direktno koristi hook
 
   const [form, setForm] = useState({
     name: "",
@@ -38,19 +40,21 @@ const AddPatient = ({ onCancel, onSuccess }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const res = await api.post("/patients", form);
-      console.log("Patient created:", res.data);
-      onSuccess();
-    } catch (err) {
-      console.error("Greška prilikom dodavanja pacijenta:", err);
+    await addPatient({
+      ...form,
+      doctor_id: form.doctor_id ? Number(form.doctor_id) : undefined,
+      blood_type: form.blood_type || undefined,
+      gender: form.gender as "male" | "female" | "other", // tipizovano
+    });
+    if (!error) {
+      onSuccess(); // zatvori i triggeruj refresh samo ako nije bilo greške
     }
   };
 
   return (
     <Box display="flex" justifyContent="center" alignItems="center" height="100%">
       <Paper sx={{ p: 4, width: "100%", maxWidth: 500 }}>
-        <Typography variant="h6" mb={3}>
+        <Typography variant="h5" mb={3}>
           Add New Patient
         </Typography>
 
@@ -107,17 +111,18 @@ const AddPatient = ({ onCancel, onSuccess }: Props) => {
             value={form.gender}
             onChange={handleChange}
           >
-            <MenuItem value="male">male</MenuItem>
-            <MenuItem value="female">female</MenuItem>
+            <MenuItem value="male">Male</MenuItem>
+            <MenuItem value="female">Female</MenuItem>
+            <MenuItem value="other">Other</MenuItem>
           </TextField>
 
-          {/* 👇 doktor autocomplete */}
+          {/* Doktor autocomplete */}
           <Autocomplete
             options={doctors}
             getOptionLabel={(option: any) =>
               option.user?.name ? `${option.user.name} (${option.specialization})` : ""
             }
-            onInputChange={(_, value) => setSearch(value)} // search radi kroz hook
+            onInputChange={(_, value) => setSearch(value)}
             onChange={(_, value) =>
               setForm({ ...form, doctor_id: value ? value.id : "" })
             }
@@ -126,7 +131,7 @@ const AddPatient = ({ onCancel, onSuccess }: Props) => {
             )}
           />
 
-          {/* 👇 blood type combo */}
+          {/* Blood type combo */}
           <TextField
             select
             fullWidth
@@ -144,14 +149,27 @@ const AddPatient = ({ onCancel, onSuccess }: Props) => {
             ))}
           </TextField>
 
+          {/* Submit & Cancel */}
           <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
-            <Button type="submit" variant="contained" fullWidth>
-              Save
+            <Button type="submit" variant="contained" fullWidth disabled={loading}>
+              {loading ? "Saving..." : "Save"}
             </Button>
             <Button variant="outlined" onClick={onCancel} fullWidth>
               Cancel
             </Button>
           </Box>
+
+          {/* Error & Success */}
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+          {successMsg && (
+            <Alert severity="success" sx={{ mt: 2 }}>
+              {successMsg}
+            </Alert>
+          )}
         </Box>
       </Paper>
     </Box>

@@ -1,21 +1,14 @@
-// PatientUpdate.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Box,
   TextField,
   Button,
-  Typography,
   Alert,
   MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
   Snackbar,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  SelectChangeEvent,
 } from "@mui/material";
 import MuiAlert, { AlertProps } from "@mui/material/Alert";
 
@@ -28,63 +21,87 @@ const CustomAlert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
 
 interface Patient {
   id: number;
-  user: {
+  jmbg: string;
+  gender: "male" | "female" | "other";
+  date_of_birth: string;
+  user?: {
     name: string;
     email: string;
   };
-  specialization: string;
-  description?: string;
 }
 
 type Props = {
   open: boolean;
-  patient: Patient;
+  patient: Patient | null;
   onCancel: () => void;
   onSuccess: () => void;
-  updatePatient: (id: number, updatedData: any) => Promise<{ success: boolean }>;
+  updatePatient: (id: number, updatedData: any) => Promise<void>;
 };
 
-const specializations = ["Kardiolog", "Neurolog", "Hirurg", "Pedijatar", "Ortoped"];
+// helper da formatira ISO datum u yyyy-MM-dd
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  try {
+    return new Date(dateStr).toISOString().split("T")[0];
+  } catch {
+    return "";
+  }
+};
 
-const PatientUpdate: React.FC<Props> = ({ open, patient, onCancel, onSuccess, updatePatient }) => {
+const PatientUpdate: React.FC<Props> = ({
+  open,
+  patient,
+  onCancel,
+  onSuccess,
+  updatePatient,
+}) => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showSnackbar, setShowSnackbar] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: patient.user.name,
-    email: patient.user.email,
-    specialization: patient.specialization,
-    description: patient.description || "",
+    name: "",
+    email: "",
+    jmbg: "",
+    date_of_birth: "",
+    gender: "male" as "male" | "female" | "other",
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent
-    ) => {
+  // kada se promeni pacijent → napuni formu
+  useEffect(() => {
+    if (patient) {
+      setFormData({
+        name: patient.user?.name || "",
+        email: patient.user?.email || "",
+        jmbg: patient.jmbg,
+        date_of_birth: formatDate(patient.date_of_birth),
+        gender: patient.gender,
+      });
+    }
+  }, [patient]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
-        ...prev,
-        [name!]: value,
+      ...prev,
+      [name]: value,
     }));
-    };
-
+  };
 
   const handleSubmit = async () => {
+    if (!patient) return;
+
     setUpdating(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const result = await updatePatient(patient.id, formData);
-      if (result.success) {
-        setSuccess("Uspešno izmenjeni podaci doktora ✅");
-        setShowSnackbar(true);
-      } else {
-        setError("Izmena nije uspela");
-      }
+      await updatePatient(patient.id, formData);
+      setSuccess("Uspešno izmenjeni podaci pacijenta ✅");
+      setShowSnackbar(true);
     } catch {
-      setError("Greška prilikom izmene doktora");
+      setError("Greška prilikom izmene pacijenta");
     } finally {
       setUpdating(false);
     }
@@ -101,12 +118,12 @@ const PatientUpdate: React.FC<Props> = ({ open, patient, onCancel, onSuccess, up
 
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
-      <DialogTitle>Izmena podataka doktora</DialogTitle>
+      <DialogTitle>Izmena pacijenta</DialogTitle>
       <DialogContent>
         {error && <Alert severity="error">{error}</Alert>}
 
         <TextField
-          label="Ime"
+          label="Ime i prezime"
           name="name"
           fullWidth
           value={formData.name}
@@ -121,34 +138,37 @@ const PatientUpdate: React.FC<Props> = ({ open, patient, onCancel, onSuccess, up
           onChange={handleChange}
           margin="normal"
         />
-
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="spec-label">Specijalizacija</InputLabel>
-          <Select
-            labelId="spec-label"
-            name="specialization"
-            value={formData.specialization}
-            onChange={handleChange}
-            label="Specijalizacija"
-          >
-            {specializations.map((spec) => (
-              <MenuItem key={spec} value={spec}>
-                {spec}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
         <TextField
-          label="Opis"
-          name="description"
+          label="JMBG"
+          name="jmbg"
           fullWidth
-          multiline
-          rows={4}
-          value={formData.description}
+          value={formData.jmbg}
           onChange={handleChange}
           margin="normal"
         />
+        <TextField
+          label="Datum rođenja"
+          name="date_of_birth"
+          type="date"
+          fullWidth
+          value={formData.date_of_birth}
+          onChange={handleChange}
+          margin="normal"
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          select
+          label="Pol"
+          name="gender"
+          fullWidth
+          value={formData.gender}
+          onChange={handleChange}
+          margin="normal"
+        >
+          <MenuItem value="male">Muški</MenuItem>
+          <MenuItem value="female">Ženski</MenuItem>
+          <MenuItem value="other">Drugo</MenuItem>
+        </TextField>
       </DialogContent>
 
       <DialogActions>
@@ -171,7 +191,11 @@ const PatientUpdate: React.FC<Props> = ({ open, patient, onCancel, onSuccess, up
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <CustomAlert onClose={handleSnackbarClose} severity="success" sx={{ width: "100%" }}>
+        <CustomAlert
+          onClose={handleSnackbarClose}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
           {success}
         </CustomAlert>
       </Snackbar>
@@ -180,7 +204,3 @@ const PatientUpdate: React.FC<Props> = ({ open, patient, onCancel, onSuccess, up
 };
 
 export default PatientUpdate;
-
-
-
-
