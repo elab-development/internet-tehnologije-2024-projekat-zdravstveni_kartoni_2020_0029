@@ -4,6 +4,12 @@ export const adminMenuItems = [
   { link: "/appointments", label: "Appointments" },
 ];
 
-export const patientMenuItems = [{ link: "doctors p", label: "Doctors P" }];
+export const patientMenuItems = [
+  { link: "/patients/medical-record/:id", label: "Medical Record" },
+  { link: "/appointments", label: "Appointments" },
+];
 
-export const doctorMenuItems = [{ link: "doctors d", label: "Doctors D" }];
+export const doctorMenuItems = [
+  { link: "/patients", label: "Medical Record" },
+  { link: "/appointments", label: "Appointments" },
+];

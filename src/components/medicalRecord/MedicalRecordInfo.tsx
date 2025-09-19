@@ -11,6 +11,8 @@ import {
   Button,
   Chip,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../auth/useAuth"; // 👈 dodato
 
 type Props = {
   record: any;
@@ -26,7 +28,10 @@ const getInitials = (name?: string) => {
     .toUpperCase();
 };
 
-const MedicalRecordInfo: React.FC<Props> = ({record, onEdit}) => {//{ record, onEdit }
+const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
+  const navigate = useNavigate();
+  const { user } = useAuth(); // 👈 uzimamo ulogovanog korisnika
+
   if (!record) {
     return (
       <Card sx={{ p: 3, textAlign: "center" }}>
@@ -36,25 +41,56 @@ const MedicalRecordInfo: React.FC<Props> = ({record, onEdit}) => {//{ record, on
       </Card>
     );
   }
-  const handleClick = () => {
-    console.log("click")
-    onEdit();
-  }
-  
+
   return (
     <Card sx={{ p: 4, borderRadius: 2, boxShadow: 3 }}>
       <CardContent>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+        {/* Naslov i dugmići */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 3,
+          }}
+        >
           <Typography variant="h5" fontWeight="bold">
-            🩺 Zdravstveni karton
+            Zdravstveni karton{" "}
+            <Typography
+              component="span"
+              variant="h6"
+              color="text.secondary"
+              sx={{ ml: 1 }}
+            >
+              #{record.id}
+            </Typography>
           </Typography>
-          <Button variant="outlined" color="primary" onClick={() => handleClick()}>
-            Edit medical record
-          </Button>
+
+          {/* Dugmići */}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            {/* 👇 Edit vidi samo admin i doktor */}
+            {user?.role !== "patient" && (
+              <Button variant="outlined" color="primary" onClick={onEdit}>
+                Edit medical record
+              </Button>
+            )}
+
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() =>
+                navigate(`/medical-records/${record.id}/examinations`)
+              }
+            >
+              Examinations
+            </Button>
+          </Box>
         </Box>
 
+        {/* Ostatak sadržaja */}
         <Grid container columnSpacing={3} columns={{ xs: 4, sm: 8, md: 12 }}>
-          <Grid > {/**item xs={12} sm={4} */}
+          {/* Pacijent */}
+          <Grid item xs={12} sm={6}>
             <Stack direction="row" spacing={2} alignItems="center" mb={2}>
               <Avatar sx={{ bgcolor: "primary.main", width: 72, height: 72 }}>
                 {getInitials(record.patient?.user?.name)}
@@ -83,7 +119,8 @@ const MedicalRecordInfo: React.FC<Props> = ({record, onEdit}) => {//{ record, on
             </Typography>
           </Grid>
 
-          <Grid> {/**item xs={12} sm={4} */}
+          {/* Doktor */}
+          <Grid item xs={12} sm={6}>
             <Stack direction="row" spacing={2} alignItems="center" mb={2}>
               <Avatar sx={{ bgcolor: "secondary.main", width: 72, height: 72 }}>
                 {getInitials(record.doctor?.user?.name)}
@@ -107,6 +144,7 @@ const MedicalRecordInfo: React.FC<Props> = ({record, onEdit}) => {//{ record, on
           </Grid>
         </Grid>
 
+        {/* Detalji */}
         <Box mt={4}>
           <Typography variant="subtitle2" color="text.secondary" gutterBottom>
             Detalji kartona

@@ -7,14 +7,17 @@ import {
   MenuItem,
   Paper,
   Alert,
+  Autocomplete,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { usePatientRegister } from "./hooks/usePatientRegister";
+import { useDoctors } from "../doctors/hooks/useDoctors";
 
 const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 const RegisterAsPatient: React.FC = () => {
   const { registerPatient, loading, error, successMsg } = usePatientRegister();
+  const { doctors, setSearch } = useDoctors();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -25,6 +28,7 @@ const RegisterAsPatient: React.FC = () => {
     date_of_birth: "",
     gender: "",
     blood_type: "",
+    doctor_id: "", // može biti prazan string dok se ne izabere
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,18 +37,24 @@ const RegisterAsPatient: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await registerPatient({
+
+    // 👇 payload usklađen sa API-jem
+    const payload = {
       name: form.name,
       email: form.email,
       password: form.password,
       jmbg: form.jmbg,
       date_of_birth: form.date_of_birth,
       gender: form.gender as "male" | "female" | "other",
+      doctor_id: form.doctor_id ? Number(form.doctor_id) : undefined,
       blood_type: form.blood_type || undefined,
-    });
+    };
+
+    console.log("📤 Registracija pacijenta payload:", payload);
+    await registerPatient(payload);
   };
 
-  // ⏳ Ako je uspešno registrovan → posle 2s vodi na login
+  // ⏳ Redirect ako je uspešno registrovan
   useEffect(() => {
     if (successMsg) {
       const timer = setTimeout(() => {
@@ -68,6 +78,7 @@ const RegisterAsPatient: React.FC = () => {
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit}>
+          {/* Name */}
           <TextField
             fullWidth
             required
@@ -77,6 +88,8 @@ const RegisterAsPatient: React.FC = () => {
             value={form.name}
             onChange={handleChange}
           />
+
+          {/* Email */}
           <TextField
             fullWidth
             required
@@ -87,6 +100,8 @@ const RegisterAsPatient: React.FC = () => {
             value={form.email}
             onChange={handleChange}
           />
+
+          {/* Password */}
           <TextField
             fullWidth
             required
@@ -98,6 +113,8 @@ const RegisterAsPatient: React.FC = () => {
             onChange={handleChange}
             inputProps={{ minLength: 8 }}
           />
+
+          {/* JMBG */}
           <TextField
             fullWidth
             required
@@ -108,6 +125,8 @@ const RegisterAsPatient: React.FC = () => {
             onChange={handleChange}
             inputProps={{ maxLength: 13, minLength: 13 }}
           />
+
+          {/* Date of Birth */}
           <TextField
             fullWidth
             required
@@ -119,6 +138,8 @@ const RegisterAsPatient: React.FC = () => {
             value={form.date_of_birth}
             onChange={handleChange}
           />
+
+          {/* Gender */}
           <TextField
             select
             required
@@ -134,6 +155,31 @@ const RegisterAsPatient: React.FC = () => {
             <MenuItem value="other">Other</MenuItem>
           </TextField>
 
+          {/* Doctor combobox */}
+          <Autocomplete
+            options={doctors}
+            getOptionLabel={(option: any) =>
+              option.user?.name
+                ? `${option.user.name} (${option.specialization})`
+                : ""
+            }
+            onInputChange={(_, value) => setSearch(value)}
+            onChange={(_, value) => {
+              const id = value ? value.id : "";
+              console.log("Selektovan doktor:", id);
+              setForm({ ...form, doctor_id: id });
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Select Doctor (optional)"
+                margin="normal"
+                fullWidth
+              />
+            )}
+          />
+
+          {/* Blood type */}
           <TextField
             select
             fullWidth
@@ -141,7 +187,17 @@ const RegisterAsPatient: React.FC = () => {
             name="blood_type"
             margin="normal"
             value={form.blood_type}
-            onChange={handleChange}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              console.log(
+                "Promena krvne grupe:",
+                "stara =",
+                form.blood_type,
+                "→ nova =",
+                newValue
+              );
+              handleChange(e); // sada ispravno prosleđuje
+            }}
           >
             <MenuItem value="">(none)</MenuItem>
             {bloodTypes.map((bt) => (
@@ -174,7 +230,11 @@ const RegisterAsPatient: React.FC = () => {
           {/* Error & Success */}
           {error && (
             <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
+              <ul>
+                {error.map((msg, idx) => (
+                  <li key={idx}>{msg}</li>
+                ))}
+              </ul>
             </Alert>
           )}
           {successMsg && (

@@ -1,3 +1,4 @@
+// src/components/patient/hooks/usePatients.ts
 import { useState, useEffect } from "react";
 import { api } from "../../../auth/api";
 import { useDebounce } from "use-debounce";
@@ -87,9 +88,9 @@ export const usePatients = () => {
       }
 
       if (raw.success) {
-        setPatients((prev) => [raw.data, ...prev]); // dodaj novog pacijenta na listu
+        setPatients((prev) => [raw.data, ...prev]);
         setNewPatientId(raw.data.id);
-        setSuccessMsg(raw.message || "Pacijent uspešno kreiran");
+        setSuccessMsg("Pacijent uspešno kreiran ✅");
       } else {
         setError("Neuspešan pokušaj kreiranja pacijenta");
       }
@@ -128,18 +129,25 @@ export const usePatients = () => {
       }
 
       if (raw.success) {
-        setSuccessMsg("Pacijent je uspešno izmenjen");
+        // Backend vraća patient sa user odnosom
+        const updatedPatient = raw.data;
+
         setPatients((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, ...raw.data } : p))
+          prev.map((p) => (p.id === id ? updatedPatient : p))
         );
+
+        setSuccessMsg("Pacijent uspešno izmenjen ✅");
+        return { success: true, data: updatedPatient };
       } else {
-        setError("Neuspešan pokušaj izmene pacijenta");
+        setError("❌ Neuspešan pokušaj izmene pacijenta");
+        return { success: false };
       }
     } catch (err: any) {
       console.error("Greška prilikom izmene pacijenta:", err);
       setError(
         err.response?.data?.message || "Greška prilikom izmene pacijenta"
       );
+      return { success: false };
     } finally {
       setLoading(false);
     }
@@ -156,7 +164,7 @@ export const usePatients = () => {
       try {
         await api.delete(`/patients/${patientToDelete}`);
         setPatients((prev) => prev.filter((p) => p.id !== patientToDelete));
-        setSuccessMsg("Pacijent je uspešno obrisan");
+        setSuccessMsg("Pacijent uspešno obrisan ✅");
       } catch (err: any) {
         console.error("Greška prilikom brisanja:", err);
         setError(
@@ -180,6 +188,7 @@ export const usePatients = () => {
     loading,
     error,
     successMsg,
+    setSuccessMsg,
     page,
     setPage,
     totalPages,
@@ -198,6 +207,6 @@ export const usePatients = () => {
     handleDeleteCancel,
     fetchPatients,
     addPatient,
-    updatePatient, // 👈 sad ima i date_of_birth podršku
+    updatePatient,
   };
 };

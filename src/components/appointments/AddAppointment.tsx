@@ -10,10 +10,10 @@ import {
   Autocomplete,
   CircularProgress,
 } from "@mui/material";
-import { usePatients } from "../patient/hooks/usePatients";
 import { useAppointment } from "./hooks/useAppointment";
 import { useAuth } from "../../auth/useAuth";
 import { useNavigate } from "react-router-dom";
+import { api } from "../../auth/api";
 import Layout from "../layout/Layout";
 
 type Props = {
@@ -24,15 +24,13 @@ const statusOptions = ["scheduled", "completed", "canceled", "no_show"];
 
 const AddAppointment = ({ onSuccess }: Props) => {
   const { user } = useAuth();
-  const navigate = useNavigate(); // 👈 inicijalizacija
+  const navigate = useNavigate();
 
-  const {
-    patients,
-    fetchPatients,
-    loading: patientsLoading,
-    error: patientsError,
-  } = usePatients();
   const { addAppointment, loading, error, successMsg } = useAppointment();
+
+  const [patients, setPatients] = useState<any[]>([]);
+  const [patientsLoading, setPatientsLoading] = useState(false);
+  const [patientsError, setPatientsError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     patient_id: "",
@@ -41,8 +39,32 @@ const AddAppointment = ({ onSuccess }: Props) => {
     status: "scheduled",
   });
 
+  // 🔥 Fetch pacijenata – vraća sve relevantne (admin sve, doktor samo svoje)
+  const fetchAllPatients = async () => {
+    setPatientsLoading(true);
+    setPatientsError(null);
+    try {
+      const res = await api.get("/patients?per_page=1000"); // uzmi sve (ili napravi poseban endpoint)
+      let raw = res.data;
+      if (typeof raw === "string") {
+        raw = raw.replace(/^\uFEFF/, "");
+        raw = JSON.parse(raw);
+      }
+      if (raw.success && Array.isArray(raw.data?.data)) {
+        setPatients(raw.data.data);
+      } else {
+        setPatientsError("Nepoznat format odgovora sa servera");
+      }
+    } catch (err) {
+      console.error("Greška prilikom učitavanja pacijenata:", err);
+      setPatientsError("Greška prilikom učitavanja pacijenata");
+    } finally {
+      setPatientsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchPatients();
+    fetchAllPatients();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,9 +102,10 @@ const AddAppointment = ({ onSuccess }: Props) => {
       onSuccess();
     }
   };
+
   const breadcrumbs = [
     { label: "Appointments", view: "appointments" },
-    { label: "new Appointment", view: "" },
+    { label: "New Appointment", view: "" },
   ];
 
   return (
@@ -182,7 +205,7 @@ const AddAppointment = ({ onSuccess }: Props) => {
               </Button>
               <Button
                 variant="outlined"
-                onClick={() => navigate("/appointments")} // 👈 vraća na listu termina
+                onClick={() => navigate("/appointments")}
                 fullWidth
                 disabled={loading}
               >

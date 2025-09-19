@@ -13,6 +13,8 @@ import AppoitmentInfo from "./components/appointments/AppoitmentsInfo";
 import AddAppointment from "./components/appointments/AddAppointment";
 import Layout from "./components/layout/Layout";
 import RegisterAsPatient from "./components/patient/RegisterAsPatient";
+import ExaminationInfo from "./components/examinations/ExaminationInfo";
+import AddExamination from "./components/examinations/AddExamination";
 
 // definiši temu
 const theme = createTheme({
@@ -36,7 +38,10 @@ function App(): React.ReactElement {
         <Route path="/register/asPatient" element={<RegisterAsPatient />} />
 
         {/* Admin dashboard */}
-        <Route path="/admin/dashboard" element={<Layout />} />
+        <Route path="/admin" element={<Layout />} />
+        <Route path="/doctor" element={<Layout />} />
+        <Route path="/patient" element={<Layout />} />
+
         <Route path="patients" element={<Patients />} />
         <Route path="patients/addPatient" element={<AddPatient />} />
 
@@ -56,6 +61,16 @@ function App(): React.ReactElement {
           path="/patients/medical-record/:patientId"
           element={<MedicalRecordPage />}
         />
+        <Route
+          path="/medical-records/:medicalRecordId/examinations"
+          element={<ExaminationInfo />}
+        />
+
+        <Route
+          path="/medical-records/:medicalRecordId/examinations/add"
+          element={<AddExamination />}
+        />
+
         {/* default route → prebaci na login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

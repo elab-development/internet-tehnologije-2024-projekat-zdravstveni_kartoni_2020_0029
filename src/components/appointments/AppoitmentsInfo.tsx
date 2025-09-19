@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   Box,
@@ -13,16 +13,18 @@ import {
   CircularProgress,
   Alert,
   Pagination,
+  TextField,
+  MenuItem,
+  Snackbar,
+  Tooltip,
+  Stack,
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   Button,
-  MenuItem,
-  TextField,
-  Snackbar,
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useAppointment } from "./hooks/useAppointment";
 import AppointmentFilters from "./AppointmentFilter";
@@ -63,15 +65,15 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
   const [page, setPage] = useState(1);
   const perPage = 8;
 
-  const [openEdit, setOpenEdit] = useState(false);
-  const [selectedRecord, setSelectedRecord] =
-    useState<AppointmentRecord | null>(null);
-  const [newStatus, setNewStatus] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [localStatus, setLocalStatus] = useState<string>("");
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // dialog za brisanje
-  const [openDelete, setOpenDelete] = useState(false);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  // ❗ state za potvrdu brisanja
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
     fetchAppointments();
@@ -81,45 +83,37 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
   const currentRecords = records?.slice(startIndex, startIndex + perPage) || [];
   const pageCount = Math.ceil((records?.length || 0) / perPage);
 
-  const handleOpenEdit = (record: AppointmentRecord) => {
-    setSelectedRecord(record);
-    setNewStatus(record.status);
-    setOpenEdit(true);
+  const handleStatusClick = (record: AppointmentRecord) => {
+    setEditingId(record.appointment_id);
+    setLocalStatus(record.status);
   };
 
-  const handleCloseEdit = () => {
-    setOpenEdit(false);
-    setSelectedRecord(null);
-    setNewStatus("");
-  };
-
-  const handleSaveStatus = async () => {
-    if (!selectedRecord) return;
-    await updateAppointment(selectedRecord.appointment_id, {
-      status: newStatus,
-    });
+  const handleStatusChange = async (id: number, newStatus: string) => {
+    setLocalStatus(newStatus);
+    await updateAppointment(id, { status: newStatus });
+    setEditingId(null);
     setShowSuccess(true);
-    handleCloseEdit();
     fetchAppointments();
   };
 
-  const handleOpenDelete = (id: number) => {
-    setDeleteId(id);
-    setOpenDelete(true);
+  const handleDeleteClick = (id: number) => {
+    setAppointmentToDelete(id);
+    setDeleteDialogOpen(true);
   };
 
-  const handleCloseDelete = () => {
-    setDeleteId(null);
-    setOpenDelete(false);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (deleteId) {
-      await deleteAppointment(deleteId);
+  const handleDeleteConfirm = async () => {
+    if (appointmentToDelete) {
+      await deleteAppointment(appointmentToDelete);
       setShowSuccess(true);
       fetchAppointments();
     }
-    handleCloseDelete();
+    setDeleteDialogOpen(false);
+    setAppointmentToDelete(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setAppointmentToDelete(null);
   };
 
   if (loading) {
@@ -140,7 +134,8 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
     return <Alert severity="error">{error}</Alert>;
   }
 
-  const breadcrumbs: any[] = [{ label: "Appointments", view: "appointment" }];
+  const breadcrumbs: any[] = [{ label: "Appointments", view: "appointments" }];
+
   return (
     <Layout crumbs1={breadcrumbs}>
       <>
@@ -162,7 +157,9 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
                 <TableCell>Scheduled By</TableCell>
                 <TableCell>Appointment Date</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                {user?.role !== "patient" && (
+                  <TableCell align="center">Actions</TableCell>
+                )}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -175,36 +172,74 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
                     {new Date(record.appointment_date).toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    <Box
-                      sx={{
-                        display: "inline-block",
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: 1,
-                        backgroundColor:
-                          record.status === "completed"
-                            ? "success.main"
-                            : record.status === "scheduled"
-                            ? "info.main"
-                            : record.status === "canceled"
-                            ? "error.main"
-                            : "warning.main",
-                        color: "common.white",
-                      }}
-                    >
-                      {record.status}
-                    </Box>
+                    {editingId === record.appointment_id ? (
+                      <TextField
+                        select
+                        size="small"
+                        value={localStatus}
+                        onChange={(e) =>
+                          handleStatusChange(
+                            record.appointment_id,
+                            e.target.value
+                          )
+                        }
+                        autoFocus
+                      >
+                        {statusOptions.map((s) => (
+                          <MenuItem key={s} value={s}>
+                            {s}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    ) : (
+                      <Box
+                        onClick={() =>
+                          user?.role !== "patient" && handleStatusClick(record)
+                        }
+                        sx={{
+                          display: "inline-block",
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 1,
+                          cursor:
+                            user?.role !== "patient" ? "pointer" : "default",
+                          backgroundColor:
+                            record.status === "completed"
+                              ? "success.main"
+                              : record.status === "scheduled"
+                              ? "info.main"
+                              : record.status === "canceled"
+                              ? "error.main"
+                              : "warning.main",
+                          color: "common.white",
+                        }}
+                      >
+                        {record.status}
+                      </Box>
+                    )}
                   </TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleOpenEdit(record)}>
-                      <EditIcon sx={{ color: "#1976d2" }} />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleOpenDelete(record.appointment_id)}
-                    >
-                      <DeleteIcon sx={{ color: "#d32f2f" }} />
-                    </IconButton>
-                  </TableCell>
+
+                  {user?.role !== "patient" && (
+                    <TableCell align="center">
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        justifyContent="center"
+                      >
+                        <Tooltip title="Delete">
+                          <IconButton
+                            color="error"
+                            size="small"
+                            onClick={() =>
+                              handleDeleteClick(record.appointment_id)
+                            }
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -222,54 +257,6 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
           </Box>
         )}
 
-        {/* Edit dialog */}
-        <Dialog open={openEdit} onClose={handleCloseEdit}>
-          <DialogTitle>Edit Appointment Status</DialogTitle>
-          <DialogContent>
-            <TextField
-              select
-              label="Status"
-              value={newStatus}
-              onChange={(e) => setNewStatus(e.target.value)}
-              fullWidth
-              margin="normal"
-            >
-              {statusOptions.map((s) => (
-                <MenuItem key={s} value={s}>
-                  {s}
-                </MenuItem>
-              ))}
-            </TextField>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseEdit}>Cancel</Button>
-            <Button
-              onClick={handleSaveStatus}
-              variant="contained"
-              color="primary"
-            >
-              Save
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Delete confirm dialog */}
-        <Dialog open={openDelete} onClose={handleCloseDelete}>
-          <DialogTitle>Confirm Delete</DialogTitle>
-          <DialogContent>
-            Da li ste sigurni da želite da obrišete ovaj termin?
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDelete}>Cancel</Button>
-            <Button
-              onClick={handleConfirmDelete}
-              sx={{ color: "error.main" }} // 👈 samo tekst crven
-            >
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
-
         {/* Snackbar za uspeh */}
         <Snackbar
           open={showSuccess && !!successMsg}
@@ -285,6 +272,27 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
             {successMsg || "Action executed successfully ✅"}
           </Alert>
         </Snackbar>
+
+        {/* Dialog za potvrdu brisanja */}
+        <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
+          <DialogTitle>Potvrda brisanja</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Da li ste sigurni da želite da obrišete ovaj termin? Ova akcija je
+              nepovratna.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDeleteCancel}>Odustani</Button>
+            <Button
+              onClick={handleDeleteConfirm}
+              color="error"
+              variant="contained"
+            >
+              Obriši
+            </Button>
+          </DialogActions>
+        </Dialog>
       </>
     </Layout>
   );

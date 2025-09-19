@@ -11,6 +11,7 @@ import MedicalRecordInfo from "./MedicalRecordInfo";
 import MedicalRecordUpdate from "./MedicalRecordUpdate";
 import { useParams } from "react-router-dom";
 import Layout from "../layout/Layout";
+import { useAuth } from "../../auth/useAuth";
 
 type Props = {};
 
@@ -51,10 +52,15 @@ const MedicalRecordPage: React.FC<{}> = () => {
         alignItems: "center",
       }} */
 
-  const breadcrumbs = [
-    { label: "Patients", view: "patients" },
-    { label: "Medical Record", view: "" },
-  ];
+  const { user } = useAuth();
+
+  const breadcrumbs =
+    user?.role === "patient"
+      ? [{ label: "Medical Record", view: "" }]
+      : [
+          { label: "Patients", view: "patients" },
+          { label: "Medical Record", view: "" },
+        ];
 
   return (
     <Layout crumbs1={breadcrumbs}>

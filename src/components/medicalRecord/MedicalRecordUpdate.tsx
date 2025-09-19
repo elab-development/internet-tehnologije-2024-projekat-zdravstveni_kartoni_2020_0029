@@ -90,7 +90,7 @@ const MedicalRecordUpdate: React.FC<Props> = ({
 
     try {
       if (record) {
-        await api.put(`/medical-records/${record.id}`, {
+        await api.put(`/medical-records/patients${record.id}`, {
           ...record, // ostavi stare vrednosti
           ...formData, // zameni novima
         });

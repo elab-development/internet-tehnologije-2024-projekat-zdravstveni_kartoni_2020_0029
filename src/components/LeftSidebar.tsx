@@ -6,14 +6,17 @@ import {
   Divider,
   Button,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/useAuth"; // Izmenjen import put
+import { useAuth } from "../auth/useAuth";
 import {
   adminMenuItems,
   doctorMenuItems,
   patientMenuItems,
 } from "../constants/leftsideitems";
+import { api } from "../auth/api";
+import { useEffect, useState } from "react";
 
 type Props = {
   onSelect: (component: string) => void;
@@ -21,9 +24,14 @@ type Props = {
   onFetchAppointments?: () => void;
 };
 
-const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
+const LeftSidebar = ({ activeView, onSelect }: Props) => {
   const navigate = useNavigate();
-  const { user, logout, loading } = useAuth(); // Promenjeno isLoading u loading
+  const { user, logout, loading } = useAuth();
+
+  const [patientMedicalRecordId, setPatientMedicalRecordId] = useState<
+    number | null
+  >(null);
+  const [fetchingRecord, setFetchingRecord] = useState(false);
 
   const displayName = user?.name?.trim() || "Admin";
   const displayEmail = user?.email || "—";
@@ -32,6 +40,27 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  // 🔥 Fetch medical record ID kad se pacijent uloguje
+  useEffect(() => {
+    const fetchMedicalRecordId = async () => {
+      if (user?.role === "patient") {
+        setFetchingRecord(true);
+        try {
+          const res = await api.get(`/patients/${user.id}/medical-record-id`);
+          if (res.data.success && res.data.data?.medical_record_id) {
+            setPatientMedicalRecordId(res.data.data.medical_record_id);
+          }
+        } catch (err) {
+          console.error("Greška pri učitavanju kartona:", err);
+        } finally {
+          setFetchingRecord(false);
+        }
+      }
+    };
+
+    fetchMedicalRecordId();
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -42,6 +71,7 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
     }
   };
 
+  // 👮 Meniji po ulozi
   const menuItems =
     user?.role === "admin"
       ? adminMenuItems
@@ -64,10 +94,12 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
         userSelect: "none",
       }}
     >
+      {/* Header */}
       <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
         <Typography variant="h6">Medical Portal</Typography>
       </Box>
 
+      {/* User Info */}
       <Box
         sx={{
           display: "flex",
@@ -96,7 +128,6 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
           {displayEmail}
         </Typography>
 
-        {/* Prikaz uloge korisnika */}
         <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
           {user?.role || "—"}
         </Typography>
@@ -104,56 +135,41 @@ const LeftSidebar = ({ activeView, onSelect, onFetchAppointments }: Props) => {
 
       <Divider sx={{ my: 2 }} />
 
-      <Stack spacing={1} sx={{ mb: 3 }}>
-        {/*<Button
-          fullWidth
-          variant={activeView === "doctors" ? "contained" : "outlined"}
-          onClick={() => onSelect("doctors")}
-          sx={{ justifyContent: "flex-start" }}
-        >
-          Doctors
-        </Button>
-        <Button
-          fullWidth
-          variant={activeView === "patients" ? "contained" : "outlined"}
-          onClick={() => onSelect("patients")}
-          sx={{ justifyContent: "flex-start" }}
-        >
-          Patients
-        </Button>
-        <Button
-          fullWidth
-          variant={activeView === "appointments" ? "contained" : "outlined"}
-          onClick={() => {
-            onSelect("appointments");
-            onFetchAppointments?.();
-          }}
-          sx={{ justifyContent: "flex-start" }}
-        >
-          Appointments
-        </Button>*/}
+      {/* Menu */}
+      {user?.role === "patient" && fetchingRecord ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+          <CircularProgress size={24} />
+        </Box>
+      ) : (
+        <Stack spacing={1} sx={{ mb: 3 }}>
+          {menuItems?.map((x) => {
+            const finalLink =
+              user?.role === "patient" && patientMedicalRecordId
+                ? x.link.replace(":id", String(patientMedicalRecordId))
+                : x.link;
 
-        {menuItems?.map((x) => (
-          <Button
-            fullWidth
-            variant={activeView === x.link ? "contained" : "outlined"}
-            onClick={() => {
-              onSelect(x.link);
-              //onFetchAppointments?.();
-            }}
-            sx={{ justifyContent: "flex-start" }}
-          >
-            {x.label}
-          </Button>
-        ))}
-      </Stack>
+            return (
+              <Button
+                key={finalLink}
+                fullWidth
+                variant={activeView === finalLink ? "contained" : "outlined"}
+                onClick={() => onSelect(finalLink)}
+                sx={{ justifyContent: "flex-start" }}
+              >
+                {x.label}
+              </Button>
+            );
+          })}
+        </Stack>
+      )}
 
+      {/* Logout */}
       <Box sx={{ mt: "auto" }}>
         <Button
           fullWidth
           variant="outlined"
           onClick={handleLogout}
-          disabled={loading} // Onemogući dugme tokom logout-a
+          disabled={loading}
         >
           {loading ? "Odjavljivanje..." : "Log out"}
         </Button>

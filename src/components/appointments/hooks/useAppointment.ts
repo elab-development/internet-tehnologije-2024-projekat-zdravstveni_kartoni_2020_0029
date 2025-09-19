@@ -1,8 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
 import { api } from "../../../auth/api";
 import { useDebounce } from "use-debounce";
+import { useAuth } from "../../../auth/useAuth"; // 👈 dodaj auth
 
 export const useAppointment = () => {
+  const { user } = useAuth(); // 👈 ovde imamo usera i njegovu rolu/id
+
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -12,7 +15,7 @@ export const useAppointment = () => {
   const [patientSearch, setPatientSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // debounce za search (da ne gađa API na svako kucanje)
+  // debounce
   const [debouncedPatientSearch] = useDebounce(patientSearch, 400);
   const [debouncedStatusFilter] = useDebounce(statusFilter, 300);
 
@@ -21,36 +24,43 @@ export const useAppointment = () => {
     setLoading(true);
     setError(null);
     try {
-        const params: any = {};
+      const params: any = {};
+
+      // ako je pacijent ulogovan, automatski filtriramo po njegovom ID-u
+      if (user?.role === "patient") {
+        params.patient_id = user.id; // 👈 backend mora da podrži ovo
+      } else {
         if (debouncedPatientSearch) params.patient = debouncedPatientSearch;
-        if (debouncedStatusFilter) params.status = debouncedStatusFilter;
+      }
 
-        // 👇 ovo je bitno – prosledi params u api.get
-        const res = await api.get("/appointments", { params });
+      if (debouncedStatusFilter) params.status = debouncedStatusFilter;
 
-        let raw = res.data;
-        if (typeof raw === "string") {
+      const res = await api.get("/appointments", { params });
+
+      let raw = res.data;
+      if (typeof raw === "string") {
         raw = raw.replace(/^\uFEFF/, "");
         raw = JSON.parse(raw);
-        }
+      }
 
-        if (raw.success && Array.isArray(raw.data)) {
+      if (raw.success && Array.isArray(raw.data)) {
         setAppointments(raw.data);
-        } else {
+      } else {
         setError("Nepoznat format odgovora sa servera");
-        }
+      }
     } catch (err: any) {
-        setError("Greška prilikom učitavanja termina");
+      setError("Greška prilikom učitavanja termina");
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-    }, [debouncedPatientSearch, debouncedStatusFilter]);
+  }, [debouncedPatientSearch, debouncedStatusFilter, user]);
 
-  // automatski refetch kad se filteri promene
+  // automatski refetch
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
 
+  // add, update, delete ostaju isti…
   const addAppointment = async (data: any) => {
     setLoading(true);
     setError(null);
@@ -71,7 +81,9 @@ export const useAppointment = () => {
         setError("Neuspešan pokušaj kreiranja termina");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Greška prilikom dodavanja termina");
+      setError(
+        err.response?.data?.message || "Greška prilikom dodavanja termina"
+      );
     } finally {
       setLoading(false);
     }
@@ -82,9 +94,9 @@ export const useAppointment = () => {
     setError(null);
     setSuccessMsg(null);
     try {
-      const res = await api.put(`/appointments/${id}/status`, data); // 👈 status endpoint
-      let raw = res.data;
+      const res = await api.put(`/appointments/${id}`, data);
 
+      let raw = res.data;
       if (typeof raw === "string") {
         raw = raw.replace(/^\uFEFF/, "");
         raw = JSON.parse(raw);
@@ -97,7 +109,9 @@ export const useAppointment = () => {
         setError("Neuspešan pokušaj ažuriranja termina");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Greška prilikom ažuriranja termina");
+      setError(
+        err.response?.data?.message || "Greška prilikom ažuriranja termina"
+      );
     } finally {
       setLoading(false);
     }
@@ -123,7 +137,9 @@ export const useAppointment = () => {
         setError("Neuspešan pokušaj brisanja termina");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Greška prilikom brisanja termina");
+      setError(
+        err.response?.data?.message || "Greška prilikom brisanja termina"
+      );
     } finally {
       setLoading(false);
     }

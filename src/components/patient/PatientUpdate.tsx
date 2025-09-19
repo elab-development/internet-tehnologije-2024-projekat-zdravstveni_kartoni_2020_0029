@@ -1,23 +1,14 @@
+// src/components/patient/PatientUpdate.tsx
 import React, { useState, useEffect } from "react";
 import {
   TextField,
   Button,
-  Alert,
   MenuItem,
-  Snackbar,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import MuiAlert, { AlertProps } from "@mui/material/Alert";
-
-const CustomAlert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
-  props,
-  ref
-) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-});
 
 interface Patient {
   id: number;
@@ -35,7 +26,10 @@ type Props = {
   patient: Patient | null;
   onCancel: () => void;
   onSuccess: () => void;
-  updatePatient: (id: number, updatedData: any) => Promise<void>;
+  updatePatient: (
+    id: number,
+    updatedData: any
+  ) => Promise<{ success: boolean; data?: any }>;
 };
 
 // helper da formatira ISO datum u yyyy-MM-dd
@@ -56,9 +50,6 @@ const PatientUpdate: React.FC<Props> = ({
   updatePatient,
 }) => {
   const [updating, setUpdating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [showSnackbar, setShowSnackbar] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -68,16 +59,23 @@ const PatientUpdate: React.FC<Props> = ({
     gender: "male" as "male" | "female" | "other",
   });
 
+  // čuvamo originalne vrednosti radi poređenja
+  const [originalData, setOriginalData] = useState<typeof formData | null>(
+    null
+  );
+
   // kada se promeni pacijent → napuni formu
   useEffect(() => {
     if (patient) {
-      setFormData({
+      const initial = {
         name: patient.user?.name || "",
         email: patient.user?.email || "",
         jmbg: patient.jmbg,
         date_of_birth: formatDate(patient.date_of_birth),
         gender: patient.gender,
-      });
+      };
+      setFormData(initial);
+      setOriginalData(initial);
     }
   }, [patient]);
 
@@ -90,38 +88,40 @@ const PatientUpdate: React.FC<Props> = ({
   };
 
   const handleSubmit = async () => {
-    if (!patient) return;
+    if (!patient || !originalData) return;
 
     setUpdating(true);
-    setError(null);
-    setSuccess(null);
 
     try {
-      await updatePatient(patient.id, formData);
-      setSuccess("Uspešno izmenjeni podaci pacijenta ✅");
-      setShowSnackbar(true);
-    } catch {
-      setError("Greška prilikom izmene pacijenta");
+      // 🔥 šaljemo samo izmenjena polja
+      const updatedData: any = {};
+      Object.keys(formData).forEach((key) => {
+        const k = key as keyof typeof formData;
+        if (formData[k] !== originalData[k]) {
+          updatedData[k] = formData[k];
+        }
+      });
+
+      if (Object.keys(updatedData).length === 0) {
+        // ništa nije promenjeno
+        onCancel();
+        return;
+      }
+
+      const result = await updatePatient(patient.id, updatedData);
+
+      if (result.success) {
+        onSuccess(); // 👈 uspešan update
+      }
     } finally {
       setUpdating(false);
     }
-  };
-
-  const handleSnackbarClose = (
-    event?: React.SyntheticEvent | Event,
-    reason?: string
-  ) => {
-    if (reason === "clickaway") return;
-    setShowSnackbar(false);
-    onSuccess();
   };
 
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
       <DialogTitle>Izmena pacijenta</DialogTitle>
       <DialogContent>
-        {error && <Alert severity="error">{error}</Alert>}
-
         <TextField
           label="Ime i prezime"
           name="name"
@@ -184,21 +184,6 @@ const PatientUpdate: React.FC<Props> = ({
           Otkaži
         </Button>
       </DialogActions>
-
-      <Snackbar
-        open={showSnackbar}
-        autoHideDuration={3000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <CustomAlert
-          onClose={handleSnackbarClose}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
-          {success}
-        </CustomAlert>
-      </Snackbar>
     </Dialog>
   );
 };

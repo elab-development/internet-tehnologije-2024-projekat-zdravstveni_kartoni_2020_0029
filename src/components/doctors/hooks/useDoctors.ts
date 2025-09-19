@@ -75,7 +75,9 @@ export const useDoctors = () => {
         setSuccessMsg("Doktor je uspešno obrisan");
       } catch (err: any) {
         console.error("Greška prilikom brisanja:", err);
-        setError(err.response?.data?.message || "Greška prilikom brisanja doktora");
+        setError(
+          err.response?.data?.message || "Greška prilikom brisanja doktora"
+        );
       }
     } else {
       setError("Morate uneti ID doktora koji preuzima kartone");
@@ -91,19 +93,41 @@ export const useDoctors = () => {
     setNewDoctorId("");
   };
 
-  const updateDoctor = async (id: number, updatedData: any) => {
+  const updateDoctor = async (
+    id: number,
+    updatedData: {
+      specialization?: string;
+      description?: string;
+      name?: string;
+      email?: string;
+    }
+  ) => {
     setLoading(true);
     setError(null);
     setSuccessMsg(null);
 
     try {
+      // 👇 šaljemo kombinovane podatke (doctor + user)
       const res = await api.put(`/doctors/${id}`, updatedData);
-      setDoctors((prev) =>
-        prev.map((doc) => (doc.id === id ? res.data.data : doc))
-      );
-      setSuccessMsg("Doktor je uspešno izmenjen");
-      return { success: true };
+
+      let raw = res.data;
+      if (typeof raw === "string") {
+        raw = raw.replace(/^\uFEFF/, "");
+        raw = JSON.parse(raw);
+      }
+
+      if (raw.success) {
+        setDoctors((prev) =>
+          prev.map((doc) => (doc.id === id ? raw.data : doc))
+        );
+        setSuccessMsg("Doktor je uspešno izmenjen");
+        return { success: true, data: raw.data };
+      } else {
+        setError("Neuspešno ažuriranje doktora");
+        return { success: false };
+      }
     } catch (err: any) {
+      console.error("Greška prilikom izmene doktora:", err);
       setError(err.response?.data?.message || "Greška prilikom izmene doktora");
       return { success: false };
     } finally {
@@ -116,8 +140,8 @@ export const useDoctors = () => {
     loading,
     error,
     successMsg,
-    setSuccessMsg,     // <--- Dodato
-    fetchDoctors,      // <--- Dodato
+    setSuccessMsg, // <--- Dodato
+    fetchDoctors, // <--- Dodato
     page,
     setPage,
     totalPages,
@@ -135,5 +159,3 @@ export const useDoctors = () => {
     updateDoctor,
   };
 };
-
-

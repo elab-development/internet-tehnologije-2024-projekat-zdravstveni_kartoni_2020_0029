@@ -40,7 +40,6 @@ export const useRecords = () => {
     }
   };
 
-
   return {
     record,
     loading,

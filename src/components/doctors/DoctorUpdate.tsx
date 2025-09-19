@@ -10,21 +10,12 @@ import {
   Select,
   InputLabel,
   FormControl,
-  Snackbar,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  SelectChangeEvent,
 } from "@mui/material";
-import MuiAlert, { AlertProps } from "@mui/material/Alert";
-
-const CustomAlert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
-  props,
-  ref
-) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-});
+import { SelectChangeEvent } from "@mui/material";
 
 interface Doctor {
   id: number;
@@ -44,13 +35,23 @@ type Props = {
   updateDoctor: (id: number, updatedData: any) => Promise<{ success: boolean }>;
 };
 
-const specializations = ["Kardiolog", "Neurolog", "Hirurg", "Pedijatar", "Ortoped"];
+const specializations = [
+  "Kardiolog",
+  "Neurolog",
+  "Hirurg",
+  "Pedijatar",
+  "Ortoped",
+];
 
-const DoctorUpdate: React.FC<Props> = ({ open, doctor, onCancel, onSuccess, updateDoctor }) => {
+const DoctorUpdate: React.FC<Props> = ({
+  open,
+  doctor,
+  onCancel,
+  onSuccess,
+  updateDoctor,
+}) => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [showSnackbar, setShowSnackbar] = useState(false);
 
   const [formData, setFormData] = useState({
     name: doctor.user.name,
@@ -60,43 +61,53 @@ const DoctorUpdate: React.FC<Props> = ({ open, doctor, onCancel, onSuccess, upda
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent
-    ) => {
+    e:
+      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      | SelectChangeEvent
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
-        ...prev,
-        [name!]: value,
+      ...prev,
+      [name!]: value,
     }));
-    };
-
+  };
 
   const handleSubmit = async () => {
     setUpdating(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const result = await updateDoctor(doctor.id, formData);
       if (result.success) {
-        setSuccess("Uspešno izmenjeni podaci doktora ✅");
-        setShowSnackbar(true);
+        // 🔥 globalni snackbar
+        window.dispatchEvent(
+          new CustomEvent("notify", {
+            detail: {
+              type: "success",
+              message: "Uspešno izmenjeni podaci doktora ✅",
+            },
+          })
+        );
+        onSuccess(); // zatvara modal
       } else {
-        setError("Izmena nije uspela");
+        window.dispatchEvent(
+          new CustomEvent("notify", {
+            detail: { type: "error", message: "Izmena doktora nije uspela ❌" },
+          })
+        );
       }
     } catch {
-      setError("Greška prilikom izmene doktora");
+      window.dispatchEvent(
+        new CustomEvent("notify", {
+          detail: {
+            type: "error",
+            message: "Greška prilikom izmene doktora ❌",
+          },
+        })
+      );
     } finally {
       setUpdating(false);
     }
-  };
-
-  const handleSnackbarClose = (
-    event?: React.SyntheticEvent | Event,
-    reason?: string
-  ) => {
-    if (reason === "clickaway") return;
-    setShowSnackbar(false);
-    onSuccess();
   };
 
   return (
@@ -129,7 +140,6 @@ const DoctorUpdate: React.FC<Props> = ({ open, doctor, onCancel, onSuccess, upda
             name="specialization"
             value={formData.specialization}
             onChange={handleChange}
-            label="Specijalizacija"
           >
             {specializations.map((spec) => (
               <MenuItem key={spec} value={spec}>
@@ -164,23 +174,8 @@ const DoctorUpdate: React.FC<Props> = ({ open, doctor, onCancel, onSuccess, upda
           Otkaži
         </Button>
       </DialogActions>
-
-      <Snackbar
-        open={showSnackbar}
-        autoHideDuration={3000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <CustomAlert onClose={handleSnackbarClose} severity="success" sx={{ width: "100%" }}>
-          {success}
-        </CustomAlert>
-      </Snackbar>
     </Dialog>
   );
 };
 
 export default DoctorUpdate;
-
-
-
-

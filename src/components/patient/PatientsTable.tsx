@@ -65,8 +65,8 @@ const PatientsTable: React.FC<Props> = ({
             key={p.id}
             hover
             sx={{ cursor: p.medical_record ? "pointer" : "default" }}
-            onClick={() =>
-              p.medical_record && onSelect(p.medical_record.id) // ✅ sada šalje record.id
+            onClick={
+              () => p.medical_record && onSelect(p.medical_record.id) // ✅ sada šalje record.id
             }
           >
             <TableCell>{p.id}</TableCell>
@@ -74,7 +74,9 @@ const PatientsTable: React.FC<Props> = ({
             <TableCell>{p.jmbg}</TableCell>
             <TableCell>{p.medical_record?.blood_type || "N/A"}</TableCell>
             <TableCell>{p.gender}</TableCell>
-            <TableCell>{p.medical_record?.doctor?.user?.name || "N/A"}</TableCell>
+            <TableCell>
+              {p.medical_record?.doctor?.user?.name || "N/A"}
+            </TableCell>
             <TableCell
               align="right"
               onClick={(e) => e.stopPropagation()} // spreči da klik na dugmiće otvara karton

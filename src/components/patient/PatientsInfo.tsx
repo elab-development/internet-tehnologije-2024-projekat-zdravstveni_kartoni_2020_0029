@@ -1,11 +1,5 @@
-import React, { useState } from "react";
-import {
-  Alert,
-  CircularProgress,
-  Box,
-  Typography,
-  Pagination,
-} from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { CircularProgress, Box, Typography, Pagination } from "@mui/material";
 import { useAuth } from "../../auth/useAuth";
 import { usePatients } from "./hooks/usePatients";
 import PatientFilters from "./PatientFilters";
@@ -14,6 +8,8 @@ import DeletePatientDialog from "./DeletePatientDialog";
 import PatientUpdate from "./PatientUpdate";
 import Layout from "../layout/Layout";
 import { useNavigate } from "react-router-dom";
+import { useNotifications } from "../hooks/useNotifications";
+import Notification from "../Notifications";
 
 const Patients = ({ onAddPatient }: { onAddPatient: () => void }) => {
   const { user } = useAuth();
@@ -42,11 +38,19 @@ const Patients = ({ onAddPatient }: { onAddPatient: () => void }) => {
   } = usePatients();
 
   const navigate = useNavigate();
-
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [patientToEdit, setPatientToEdit] = useState<BackendPatient | null>(
     null
   );
+
+  // 📢 notifications
+  const { message, type, notifySuccess, notifyError, clear } =
+    useNotifications();
+
+  useEffect(() => {
+    if (successMsg) notifySuccess(successMsg);
+    if (error) notifyError(error);
+  }, [successMsg, error]);
 
   if (loading) {
     return (
@@ -67,8 +71,8 @@ const Patients = ({ onAddPatient }: { onAddPatient: () => void }) => {
   return (
     <Layout crumbs1={breadcrumbs}>
       <>
-        {successMsg && <Alert severity="success">{successMsg}</Alert>}
-        {error && <Alert severity="error">{error}</Alert>}
+        {/* 🔔 Globalna notifikacija */}
+        <Notification message={message} type={type} onClose={clear} />
 
         <PatientFilters
           search={search}
@@ -89,7 +93,6 @@ const Patients = ({ onAddPatient }: { onAddPatient: () => void }) => {
             setEditDialogOpen(true);
           }}
           onSelect={(id: number) => {
-            console.log("👀 Klik na pacijenta, ID pacijenta:", id);
             navigate(`/patients/medical-record/${id}`);
           }}
         />
