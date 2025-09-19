@@ -1,13 +1,13 @@
 import React from "react";
-import { Box, TextField, Select, MenuItem, Button, Typography } from "@mui/material";
+import { Box, TextField, Button, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 type PatientFiltersProps = {
   search: string;
   setSearch: (val: string) => void;
   specialization: string;
   setSpecialization: (val: string) => void;
-  onAddPatient: () => void;
-  user: { role?: string } | null; 
+  user: { role?: string } | null;
   doctorSearch: string;
   setDoctorSearch: (val: string) => void;
 };
@@ -17,11 +17,11 @@ const PatientFilters: React.FC<PatientFiltersProps> = ({
   setSearch,
   specialization,
   setSpecialization,
-  onAddPatient,
   user,
-  doctorSearch, 
-  setDoctorSearch
+  doctorSearch,
+  setDoctorSearch,
 }) => {
+  const navigate = useNavigate();
 
   return (
     <Box
@@ -50,8 +50,11 @@ const PatientFilters: React.FC<PatientFiltersProps> = ({
           onChange={(e) => setDoctorSearch(e.target.value)}
         />
 
-        {(user?.role === "admin" || user?.role === "patient") && (
-          <Button variant="contained" onClick={onAddPatient}>
+        {(user?.role === "admin" || user?.role === "doctor") && (
+          <Button
+            variant="contained"
+            onClick={() => navigate("/patients/addPatient")}
+          >
             New Patient
           </Button>
         )}
@@ -61,4 +64,3 @@ const PatientFilters: React.FC<PatientFiltersProps> = ({
 };
 
 export default PatientFilters;
-

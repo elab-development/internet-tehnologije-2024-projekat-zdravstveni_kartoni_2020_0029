@@ -1,33 +1,33 @@
-import { 
-  TextField, 
-  Button, 
-  Box, 
-  Paper, 
-  Typography, 
+import {
+  TextField,
+  Button,
+  Box,
+  Paper,
+  Typography,
   Link as MuiLink,
   Alert,
-  CircularProgress
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+  CircularProgress,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../auth/useAuth";
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('admin@klinika.rs');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("admin@klinika.rs");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { loginWithCredentials, loading } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    
+    setError("");
+
     try {
       await loginWithCredentials(email, password);
       // ✅ Redirect sada radi samo AuthProvider (preko response.redirect_to)
     } catch (err: any) {
-      setError(err.message || 'Došlo je do greške pri prijavi');
+      setError(err.message || "Došlo je do greške pri prijavi");
     }
   };
 
@@ -36,7 +36,7 @@ export default function LoginForm() {
       height="100vh"
       component="form"
       onSubmit={handleLogin}
-      sx={{ backgroundColor: '#f5f5f5' }}
+      sx={{ backgroundColor: "#f5f5f5" }}
       display="flex"
       justifyContent="center"
       alignItems="center"
@@ -47,28 +47,28 @@ export default function LoginForm() {
           component="h1"
           sx={{
             fontWeight: 600,
-            textAlign: 'center',
-            mb: 2
+            textAlign: "center",
+            mb: 2,
           }}
         >
           Login
         </Typography>
 
         {error && (
-          <Alert 
-            severity="error" 
-            sx={{ 
+          <Alert
+            severity="error"
+            sx={{
               mb: 2,
-              '& .MuiAlert-message': {
-                width: '100%'
-              }
+              "& .MuiAlert-message": {
+                width: "100%",
+              },
             }}
           >
             {error}
           </Alert>
         )}
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <TextField
             label="Email"
             type="email"
@@ -96,17 +96,17 @@ export default function LoginForm() {
             disabled={loading}
             sx={{ py: 1.5 }}
           >
-            {loading ? <CircularProgress size={24} /> : 'PRIJAVI SE'}
+            {loading ? <CircularProgress size={24} /> : "PRIJAVI SE"}
           </Button>
 
-          <Box sx={{ textAlign: 'center', mt: 1 }}>
+          <Box sx={{ textAlign: "center", mt: 1 }}>
             <MuiLink
-              onClick={() => navigate('/register')}
+              onClick={() => navigate("/register/asPatient")} // 👈 izmenjeno
               sx={{
-                cursor: 'pointer',
-                textDecoration: 'none',
-                '&:hover': { textDecoration: 'underline' },
-                userSelect: 'none',
+                cursor: "pointer",
+                textDecoration: "none",
+                "&:hover": { textDecoration: "underline" },
+                userSelect: "none",
               }}
             >
               Register as patient

@@ -27,6 +27,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useAppointment } from "./hooks/useAppointment";
 import AppointmentFilters from "./AppointmentFilter";
 import { useAuth } from "../../auth/useAuth";
+import Layout from "../layout/Layout";
 
 export interface AppointmentRecord {
   appointment_id: number;
@@ -63,7 +64,8 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
   const perPage = 8;
 
   const [openEdit, setOpenEdit] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<AppointmentRecord | null>(null);
+  const [selectedRecord, setSelectedRecord] =
+    useState<AppointmentRecord | null>(null);
   const [newStatus, setNewStatus] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -93,7 +95,9 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
 
   const handleSaveStatus = async () => {
     if (!selectedRecord) return;
-    await updateAppointment(selectedRecord.appointment_id, { status: newStatus });
+    await updateAppointment(selectedRecord.appointment_id, {
+      status: newStatus,
+    });
     setShowSuccess(true);
     handleCloseEdit();
     fetchAppointments();
@@ -120,7 +124,12 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="200px"
+      >
         <CircularProgress />
         <Typography sx={{ ml: 2 }}>Učitavanje termina...</Typography>
       </Box>
@@ -131,138 +140,153 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
     return <Alert severity="error">{error}</Alert>;
   }
 
+  const breadcrumbs: any[] = [{ label: "Appointments", view: "appointment" }];
   return (
-    <>
-      <AppointmentFilters
-        search={patientSearch}
-        setSearch={setPatientSearch}
-        status={statusFilter}
-        setStatus={setStatusFilter}
-        onAddAppointment={onAddAppointment}
-        user={user}
-      />
+    <Layout crumbs1={breadcrumbs}>
+      <>
+        <AppointmentFilters
+          search={patientSearch}
+          setSearch={setPatientSearch}
+          status={statusFilter}
+          setStatus={setStatusFilter}
+          onAddAppointment={onAddAppointment}
+          user={user}
+        />
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Patient</TableCell>
-              <TableCell>Scheduled By</TableCell>
-              <TableCell>Appointment Date</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {currentRecords.map((record) => (
-              <TableRow key={record.appointment_id} hover>
-                <TableCell>{record.appointment_id}</TableCell>
-                <TableCell>{record.patient}</TableCell>
-                <TableCell>{record.scheduled_by}</TableCell>
-                <TableCell>{new Date(record.appointment_date).toLocaleString()}</TableCell>
-                <TableCell>
-                  <Box
-                    sx={{
-                      display: "inline-block",
-                      px: 1,
-                      py: 0.5,
-                      borderRadius: 1,
-                      backgroundColor:
-                        record.status === "completed"
-                          ? "success.main"
-                          : record.status === "scheduled"
-                          ? "info.main"
-                          : record.status === "canceled"
-                          ? "error.main"
-                          : "warning.main",
-                      color: "common.white",
-                    }}
-                  >
-                    {record.status}
-                  </Box>
-                </TableCell>
-                <TableCell align="right">
-                  <IconButton onClick={() => handleOpenEdit(record)}>
-                    <EditIcon sx={{ color: "#1976d2" }} />
-                  </IconButton>
-                  <IconButton onClick={() => handleOpenDelete(record.appointment_id)}>
-                    <DeleteIcon sx={{ color: "#d32f2f" }} />
-                  </IconButton>
-                </TableCell>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Patient</TableCell>
+                <TableCell>Scheduled By</TableCell>
+                <TableCell>Appointment Date</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {currentRecords.map((record) => (
+                <TableRow key={record.appointment_id} hover>
+                  <TableCell>{record.appointment_id}</TableCell>
+                  <TableCell>{record.patient}</TableCell>
+                  <TableCell>{record.scheduled_by}</TableCell>
+                  <TableCell>
+                    {new Date(record.appointment_date).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <Box
+                      sx={{
+                        display: "inline-block",
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 1,
+                        backgroundColor:
+                          record.status === "completed"
+                            ? "success.main"
+                            : record.status === "scheduled"
+                            ? "info.main"
+                            : record.status === "canceled"
+                            ? "error.main"
+                            : "warning.main",
+                        color: "common.white",
+                      }}
+                    >
+                      {record.status}
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton onClick={() => handleOpenEdit(record)}>
+                      <EditIcon sx={{ color: "#1976d2" }} />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleOpenDelete(record.appointment_id)}
+                    >
+                      <DeleteIcon sx={{ color: "#d32f2f" }} />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      {pageCount > 1 && (
-        <Box display="flex" justifyContent="center" mt={3}>
-          <Pagination
-            count={pageCount}
-            page={page}
-            onChange={(_, value) => setPage(value)}
-            color="primary"
-          />
-        </Box>
-      )}
+        {pageCount > 1 && (
+          <Box display="flex" justifyContent="center" mt={3}>
+            <Pagination
+              count={pageCount}
+              page={page}
+              onChange={(_, value) => setPage(value)}
+              color="primary"
+            />
+          </Box>
+        )}
 
-      {/* Edit dialog */}
-      <Dialog open={openEdit} onClose={handleCloseEdit}>
-        <DialogTitle>Edit Appointment Status</DialogTitle>
-        <DialogContent>
-          <TextField
-            select
-            label="Status"
-            value={newStatus}
-            onChange={(e) => setNewStatus(e.target.value)}
-            fullWidth
-            margin="normal"
+        {/* Edit dialog */}
+        <Dialog open={openEdit} onClose={handleCloseEdit}>
+          <DialogTitle>Edit Appointment Status</DialogTitle>
+          <DialogContent>
+            <TextField
+              select
+              label="Status"
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value)}
+              fullWidth
+              margin="normal"
+            >
+              {statusOptions.map((s) => (
+                <MenuItem key={s} value={s}>
+                  {s}
+                </MenuItem>
+              ))}
+            </TextField>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseEdit}>Cancel</Button>
+            <Button
+              onClick={handleSaveStatus}
+              variant="contained"
+              color="primary"
+            >
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete confirm dialog */}
+        <Dialog open={openDelete} onClose={handleCloseDelete}>
+          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogContent>
+            Da li ste sigurni da želite da obrišete ovaj termin?
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDelete}>Cancel</Button>
+            <Button
+              onClick={handleConfirmDelete}
+              sx={{ color: "error.main" }} // 👈 samo tekst crven
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Snackbar za uspeh */}
+        <Snackbar
+          open={showSuccess && !!successMsg}
+          autoHideDuration={3000}
+          onClose={() => setShowSuccess(false)}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <Alert
+            severity="success"
+            onClose={() => setShowSuccess(false)}
+            sx={{ width: "100%" }}
           >
-            {statusOptions.map((s) => (
-              <MenuItem key={s} value={s}>
-                {s}
-              </MenuItem>
-            ))}
-          </TextField>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEdit}>Cancel</Button>
-          <Button onClick={handleSaveStatus} variant="contained" color="primary">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete confirm dialog */}
-      <Dialog open={openDelete} onClose={handleCloseDelete}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          Da li ste sigurni da želite da obrišete ovaj termin?
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDelete}>Cancel</Button>
-          <Button 
-            onClick={handleConfirmDelete} 
-            sx={{ color: "error.main" }}   // 👈 samo tekst crven
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Snackbar za uspeh */}
-      <Snackbar
-        open={showSuccess && !!successMsg}
-        autoHideDuration={3000}
-        onClose={() => setShowSuccess(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert severity="success" onClose={() => setShowSuccess(false)} sx={{ width: "100%" }}>
-          {successMsg || "Action executed successfully ✅"}
-        </Alert>
-      </Snackbar>
-    </>
+            {successMsg || "Action executed successfully ✅"}
+          </Alert>
+        </Snackbar>
+      </>
+    </Layout>
   );
 };
 

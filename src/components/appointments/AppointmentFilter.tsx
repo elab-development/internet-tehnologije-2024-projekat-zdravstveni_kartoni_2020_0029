@@ -1,12 +1,19 @@
 import React from "react";
-import { Box, TextField, Select, MenuItem, Button, Typography } from "@mui/material";
+import {
+  Box,
+  TextField,
+  Select,
+  MenuItem,
+  Button,
+  Typography,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 type AppointmentFiltersProps = {
   search: string;
   setSearch: (val: string) => void;
   status: string;
   setStatus: (val: string) => void;
-  onAddAppointment: () => void;
   user: { role?: string } | null;
 };
 
@@ -15,10 +22,10 @@ const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
   setSearch,
   status,
   setStatus,
-  onAddAppointment,
   user,
 }) => {
   const statusOptions = ["scheduled", "completed", "canceled", "no_show"];
+  const navigate = useNavigate();
 
   return (
     <Box
@@ -58,7 +65,10 @@ const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
 
         {/* Dugme za dodavanje termina */}
         {(user?.role === "admin" || user?.role === "nurse") && (
-          <Button variant="contained" onClick={onAddAppointment}>
+          <Button
+            variant="contained"
+            onClick={() => navigate("/appointments/addAppointment")} // 👈 ide na rutu
+          >
             New Appointment
           </Button>
         )}

@@ -1,13 +1,20 @@
 import React from "react";
-import { Box, TextField, Select, MenuItem, Button, Typography } from "@mui/material";
+import {
+  Box,
+  TextField,
+  Select,
+  MenuItem,
+  Button,
+  Typography,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 type DoctorFiltersProps = {
   search: string;
   setSearch: (val: string) => void;
   specialization: string;
   setSpecialization: (val: string) => void;
-  onAddDoctor: () => void;
-  user: { role?: string } | null; // možeš proširiti ako imaš definisan User tip
+  user: { role?: string } | null;
 };
 
 const DoctorFilters: React.FC<DoctorFiltersProps> = ({
@@ -15,10 +22,16 @@ const DoctorFilters: React.FC<DoctorFiltersProps> = ({
   setSearch,
   specialization,
   setSpecialization,
-  onAddDoctor,
   user,
 }) => {
-  const specializations = ["Kardiolog", "Neurolog", "Hirurg", "Pedijatar", "Ortoped"];
+  const navigate = useNavigate();
+  const specializations = [
+    "Kardiolog",
+    "Neurolog",
+    "Hirurg",
+    "Pedijatar",
+    "Ortoped",
+  ];
 
   return (
     <Box
@@ -55,7 +68,10 @@ const DoctorFilters: React.FC<DoctorFiltersProps> = ({
         </Select>
 
         {(user?.role === "admin" || user?.role === "doctor") && (
-          <Button variant="contained" onClick={onAddDoctor}>
+          <Button
+            variant="contained"
+            onClick={() => navigate("/doctors/addDoctor")} // 👈 ide na rutu
+          >
             New Doctor
           </Button>
         )}
@@ -65,4 +81,3 @@ const DoctorFilters: React.FC<DoctorFiltersProps> = ({
 };
 
 export default DoctorFilters;
-

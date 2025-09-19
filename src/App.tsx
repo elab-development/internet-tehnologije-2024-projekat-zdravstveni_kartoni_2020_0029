@@ -11,6 +11,8 @@ import Doctors from "./components/doctors/DoctorsInfo";
 import AddDoctor from "./components/doctors/addDoctor";
 import AppoitmentInfo from "./components/appointments/AppoitmentsInfo";
 import AddAppointment from "./components/appointments/AddAppointment";
+import Layout from "./components/layout/Layout";
+import RegisterAsPatient from "./components/patient/RegisterAsPatient";
 
 // definiši temu
 const theme = createTheme({
@@ -30,16 +32,22 @@ function App(): React.ReactElement {
         {/* Login stranica */}
         <Route path="/login" element={<LoginForm />} />
 
+        {/* Regoister stranica */}
+        <Route path="/register/asPatient" element={<RegisterAsPatient />} />
+
         {/* Admin dashboard */}
-        <Route path="/admin/dashboard" element={<Dashboard />} />
+        <Route path="/admin/dashboard" element={<Layout />} />
         <Route path="patients" element={<Patients />} />
-        <Route path="addPatient" element={<AddPatient />} />
+        <Route path="patients/addPatient" element={<AddPatient />} />
 
         <Route path="doctors" element={<Doctors />} />
-        <Route path="addDoctor" element={<AddDoctor />} />
+        <Route path="doctors/addDoctor" element={<AddDoctor />} />
 
         <Route path="appointments" element={<AppoitmentInfo />} />
-        <Route path="addAppointment" element={<AddAppointment />} />
+        <Route
+          path="appointments/addAppointment"
+          element={<AddAppointment />}
+        />
         {/*<Route
           path="/medical-records"
           element={<MedicalRecordsPage />}

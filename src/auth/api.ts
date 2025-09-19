@@ -5,6 +5,7 @@ export const API_BASE = "http://127.0.0.1:8000/api";
 // 🔑 ključ pod kojim će se token čuvati u localStorage
 export const TOKEN_KEY = "token";
 
+// 🔒 instanca za ulogovane korisnike (uzima token iz localStorage)
 export const api = axios.create({
   baseURL: API_BASE,
   withCredentials: false,
@@ -23,14 +24,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-
-
-
-
-
-
-
-
-
-
-
+// 🌍 instanca za javne pozive (registracija pacijenta, login...)
+export const apiPublic = axios.create({
+  baseURL: API_BASE,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+});

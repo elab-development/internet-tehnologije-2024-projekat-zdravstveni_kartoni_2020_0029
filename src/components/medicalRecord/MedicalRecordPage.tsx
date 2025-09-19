@@ -53,8 +53,7 @@ const MedicalRecordPage: React.FC<{}> = () => {
 
   const breadcrumbs = [
     { label: "Patients", view: "patients" },
-    { label: "Medical Records", view: "medical-records" },
-    { label: record?.name ?? "pacijent", view: "" },
+    { label: "Medical Record", view: "" },
   ];
 
   return (
