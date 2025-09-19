@@ -240,4 +240,40 @@ class DoctorController extends Controller
             'data' => $patients
         ]);
     }
+
+    public function updateDoctorPassword(Request $request, $id)
+    {
+        $admin = Auth::user();
+
+        if (!$admin || !$admin->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Samo administrator može menjati šifru doktoru'
+            ], 403);
+        }
+
+        $doctor = Doctor::find($id);
+
+        if (!$doctor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doktor nije pronađen'
+            ], 404);
+        }
+
+        // Validacija nove šifre
+        $validated = $request->validate([
+            'password' => 'required|string|min:8|confirmed'
+        ]);
+
+        // Update password-a u povezanoj `users` tabeli
+        $doctor->user->update([
+            'password' => bcrypt($validated['password'])
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Šifra doktora je uspešno promenjena'
+        ]);
+    }
 }

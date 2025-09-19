@@ -19,7 +19,6 @@ class AppointmentController extends Controller
             'user:id,name,email'
         ]);
 
-        // 🔎 filtriranje po pacijentu
         // 🔎 filtriranje po pacijentu (ime pacijenta)
         if ($request->filled('patient')) {
             $search = $request->input('patient');
@@ -35,7 +34,6 @@ class AppointmentController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-
         // 👮 restrikcija po ulozi
         if ($user->role !== 'admin') {
             $query->whereHas('medicalRecord', function ($q) use ($user) {
@@ -43,6 +41,10 @@ class AppointmentController extends Controller
                     $q->where('doctor_id', $user->id);
                 } elseif ($user->role === 'nurse') {
                     $q->where('nurse_id', $user->id);
+                } elseif ($user->role === 'patient') {
+                    // 🔥 pacijent vidi samo svoje termine
+                    $q->where('patient_id', $user->patientProfile->id);
+                    // pretpostavljam da imaš relaciju User->patientProfile
                 }
             });
         }
@@ -62,6 +64,7 @@ class AppointmentController extends Controller
             'data' => $appointments,
         ]);
     }
+
 
 
 

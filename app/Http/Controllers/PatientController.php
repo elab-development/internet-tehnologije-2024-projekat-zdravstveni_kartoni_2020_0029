@@ -11,36 +11,82 @@ use Illuminate\Support\Facades\Validator;
 
 class PatientController extends Controller
 {
-    // 📌 Lista pacijenata
+    // 📌 Prikaz svih pacijenata
     public function index(Request $request)
     {
         $user = Auth::user();
         $search = $request->query('search');
         $perPage = $request->query('per_page', 8);
 
-        $query = Patient::with('user', 'medicalRecord.doctor.user')
-            ->when($search, function ($q) use ($search) {
-                $q->whereHas('user', function ($sub) use ($search) {
-                    $sub->where('name', 'like', $search . '%');
-                });
-            });
-
+        // ADMIN → svi pacijenti
         if ($user->isAdmin()) {
+            $patients = Patient::with('user', 'medicalRecord.doctor.user')
+                ->when($search, fn($query) =>
+                    $query->whereHas('user', fn($q) =>
+                        $q->where('name', 'like', $search . '%')
+                    )
+                )
+                ->paginate($perPage);
+
             return response()->json([
                 'success' => true,
-                'data'    => $query->paginate($perPage)
+                'data' => $patients
             ]);
         }
 
+        // DOCTOR → samo njegovi pacijenti
         if ($user->isDoctor()) {
             $doctor = $user->doctorProfile;
-            $query->whereHas('medicalRecord', function ($q) use ($doctor) {
-                $q->where('doctor_id', $doctor->id);
-            });
+
+            $patients = Patient::whereHas('medicalRecord', fn($query) =>
+                    $query->where('doctor_id', $doctor->id)
+                )
+                ->with('user', 'medicalRecord.doctor.user')
+                ->when($search, fn($query) =>
+                    $query->whereHas('user', fn($q) =>
+                        $q->where('name', 'like', $search . '%')
+                    )
+                )
+                ->paginate($perPage);
 
             return response()->json([
                 'success' => true,
-                'data'    => $query->paginate($perPage)
+                'data' => $patients
+            ]);
+        }
+
+        // NURSE → samo pacijenti vezani za sestru
+        if ($user->isNurse()) {
+            $nurse = $user->nurseProfile;
+
+            $patients = Patient::whereHas('medicalRecord', fn($query) =>
+                    $query->where('nurse_id', $nurse->id)
+                )
+                ->with('user', 'medicalRecord.doctor.user')
+                ->when($search, fn($query) =>
+                    $query->whereHas('user', fn($q) =>
+                        $q->where('name', 'like', $search . '%')
+                    )
+                )
+                ->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $patients
+            ]);
+        }
+
+        // PATIENT → samo svoj nalog
+        if ($user->isPatient()) {
+            $patient = $user->patientProfile;
+
+            $patients = Patient::where('id', $patient->id)
+                ->with('user', 'medicalRecord.doctor.user')
+                ->paginate(1);
+
+            return response()->json([
+                'success' => true,
+                'data' => $patients
             ]);
         }
 
@@ -50,7 +96,8 @@ class PatientController extends Controller
         ], 403);
     }
 
-    // 📌 Prikaz jednog pacijenta
+
+    // 📌 Prikaz pojedinačnog pacijenta
     public function show($id)
     {
         $patient = Patient::with(['user', 'medicalRecord.doctor.user'])->find($id);
@@ -80,18 +127,15 @@ class PatientController extends Controller
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'data'    => $patient
-        ]);
+        return $patient;
     }
 
-    // 📌 Kreiranje pacijenta (self-reg ili od strane admina/doktora)
+    // 📌 Kreiranje pacijenta (self-registration ili admin/doktor)
     public function store(Request $request)
     {
         $authUser = Auth::user();
 
-        // 🟢 Ako nema ulogovanog korisnika (self-registration)
+        // 🔹 Self-registration (nema Auth user-a)
         if (!$authUser) {
             $validator = Validator::make($request->all(), [
                 'name'          => 'required|string|max:255',
@@ -105,7 +149,10 @@ class PatientController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+                return response()->json([
+                    'success' => false,
+                    'errors'  => $validator->errors()
+                ], 422);
             }
 
             $user = User::create([
@@ -128,7 +175,7 @@ class PatientController extends Controller
                     'patient_id'   => $patient->id,
                     'doctor_id'    => $request->doctor_id,
                     'blood_type'   => $request->blood_type,
-                    'opening_date' => now()->format('Y-m-d'),
+                    'opening_date' => now(),
                 ]);
             }
 
@@ -139,7 +186,7 @@ class PatientController extends Controller
             ], 201);
         }
 
-        // 🟢 Ako je ulogovan korisnik (admin/doktor)
+        // 🔹 Ako je Auth user → samo admin ili doktor
         if (!in_array($authUser->role, ['admin', 'doctor'])) {
             return response()->json([
                 'success' => false,
@@ -155,11 +202,14 @@ class PatientController extends Controller
             'date_of_birth' => 'required|date',
             'gender'        => 'required|in:male,female,other',
             'doctor_id'     => 'nullable|exists:doctors,id',
-            'blood_type'    => 'nullable|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
+            'blood_type'    => 'required_with:doctor_id|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors()
+            ], 422);
         }
 
         $user = User::create([
@@ -177,7 +227,7 @@ class PatientController extends Controller
         ]);
 
         $medicalRecord = null;
-        if ($request->filled('doctor_id') || $request->filled('blood_type')) {
+        if ($request->filled('doctor_id')) {
             $medicalRecord = MedicalRecord::create([
                 'patient_id'       => $patient->id,
                 'doctor_id'        => $request->doctor_id,
@@ -211,11 +261,11 @@ class PatientController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'name'         => 'sometimes|string',
-            'email'        => 'sometimes|email|unique:users,email,' . $patient->user_id,
-            'jmbg'         => 'sometimes|string|size:13|unique:patients,jmbg,' . $id,
-            'date_of_birth'=> 'sometimes|date',
-            'gender'       => 'sometimes|in:male,female,other',
+            'name' => 'sometimes|string',
+            'email' => 'sometimes|email|unique:users,email,' . $patient->user_id,
+            'jmbg' => 'sometimes|string|size:13|unique:patients,jmbg,' . $id,
+            'date_of_birth' => 'sometimes|date',
+            'gender' => 'sometimes|in:male,female,other',
         ]);
 
         if ($validator->fails()) {
@@ -254,10 +304,10 @@ class PatientController extends Controller
         $patient->delete();
         User::destroy($userId);
 
-        return response()->json(['success' => true, 'message' => 'Pacijent uspešno obrisan']);
+        return response()->json(['success' => true, 'message' => 'Pacijent je uspešno obrisan']);
     }
 
-    // 📌 Lista pacijenata određenog doktora
+    // 📌 Pacijenti određenog lekara
     public function getPatientsByDoctor(Request $request)
     {
         $user = Auth::user();
@@ -265,11 +315,11 @@ class PatientController extends Controller
         $perPage = $request->query('per_page', 8);
 
         $query = Patient::with(['user', 'medicalRecord.doctor.user'])
-            ->when($searchDoctorName, function ($q) use ($searchDoctorName) {
-                $q->whereHas('medicalRecord.doctor.user', function ($sub) use ($searchDoctorName) {
-                    $sub->where('name', 'like', '%' . $searchDoctorName . '%');
-                });
-            });
+            ->when($searchDoctorName, fn($q) =>
+                $q->whereHas('medicalRecord.doctor.user', fn($sub) =>
+                    $sub->where('name', 'like', '%' . $searchDoctorName . '%')
+                )
+            );
 
         if ($user->isAdmin()) {
             return response()->json(['success' => true, 'data' => $query->paginate($perPage)]);
@@ -279,12 +329,11 @@ class PatientController extends Controller
             $doctorId = optional($user->doctorProfile)->id;
 
             if (!$doctorId) {
-                return response()->json(['success' => false, 'message' => 'Doktor nema definisan profil'], 400);
+                return response()->json(['success' => false, 'message' => 'Doktor nema profil'], 400);
             }
 
-            $patients = $query->whereHas('medicalRecord', function ($q) use ($doctorId) {
-                $q->where('doctor_id', $doctorId);
-            })->paginate($perPage);
+            $patients = $query->whereHas('medicalRecord', fn($q) => $q->where('doctor_id', $doctorId))
+                              ->paginate($perPage);
 
             return response()->json(['success' => true, 'data' => $patients]);
         }

@@ -32,28 +32,28 @@ class MedicalRecordController extends Controller
     }
 
     // Prikaz pojedinačnog zdravstvenog kartona
-    public function show($patientId)
+    public function show($medicalRecordId)
     {
         $user = Auth::user();
 
-        // Nađi karton preko patient_id
+        // Nađi karton po njegovom ID-u
         $medicalRecord = \App\Models\MedicalRecord::with([
-            'patient.user',      // info o pacijentu i njegovom user nalogu
-            'doctor.user',       // info o doktoru i njegovom user nalogu
-            'examinations',      // sve preglede
-        ])->where('patient_id', $patientId)->first();
+            'patient.user',      // pacijent + user
+            'doctor.user',       // doktor + user
+            'examinations',      // svi pregledi
+        ])->find($medicalRecordId);
 
         if (!$medicalRecord) {
             return response()->json([
                 'success' => false,
-                'message' => 'Zdravstveni karton za ovog pacijenta nije pronađen'
+                'message' => 'Zdravstveni karton nije pronađen'
             ], 404);
         }
 
         // 🔒 Provera pristupa
         if ($user->isPatient()) {
             $patient = $user->patientProfile;
-            if ($medicalRecord->patient_id !== $patient->id) {
+            if ($medicalRecord->patient_id !== optional($patient)->id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Nemate pristup ovom zdravstvenom kartonu'
@@ -61,7 +61,7 @@ class MedicalRecordController extends Controller
             }
         } elseif ($user->isDoctor()) {
             $doctor = $user->doctorProfile;
-            if ($medicalRecord->doctor_id !== $doctor->id) {
+            if ($medicalRecord->doctor_id !== optional($doctor)->id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Nemate pristup ovom zdravstvenom kartonu'
@@ -74,6 +74,7 @@ class MedicalRecordController extends Controller
             'data'    => $medicalRecord
         ]);
     }
+
 
 
     // Pacijent menja lekara
@@ -161,4 +162,24 @@ class MedicalRecordController extends Controller
             'data' => $medicalRecord
         ]);
     }
+    // Vrati ID kartona pacijenta (ako postoji)
+    public function getByPatientId($patientId)
+    {
+        $medicalRecord = MedicalRecord::where('patient_id', $patientId)->first();
+
+        if (!$medicalRecord) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Karton za ovog pacijenta ne postoji'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'medical_record_id' => $medicalRecord->id
+            ]
+        ]);
+    }
+
 }

@@ -54,9 +54,9 @@ class LoginController extends Controller
     protected function getDashboardRoute($role)
     {
         return match($role) {
-            UserRole::ADMIN->value => '/admin/dashboard',
-            UserRole::DOCTOR->value => '/doctor/dashboard',
-            UserRole::PATIENT->value => '/patient/dashboard',
+            UserRole::ADMIN->value => '/admin',
+            UserRole::DOCTOR->value => '/doctor',
+            UserRole::PATIENT->value => '/patient',
             default => '/home',
         };
     }
