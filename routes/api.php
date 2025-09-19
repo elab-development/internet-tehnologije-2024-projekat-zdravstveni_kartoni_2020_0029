@@ -16,7 +16,9 @@ use App\Http\Controllers\DoctorController;
 Route::middleware("api.response")->group(function () {
     // Javne rute
     Route::post("/login", [LoginController::class, "login"])->withoutMiddleware(["api"]);
-    Route::post("/register", [RegisterController::class, "register"]);
+    Route::post("/register", [RegisterController::class, "register"])->withoutMiddleware(["api"]);
+    Route::post('/patients/register', [PatientController::class, 'store'])->withoutMiddleware(["api"]);
+    Route::get("/doctors", [DoctorController::class, "index"])->withoutMiddleware(["api"]);
 
     // Zaštićene rute
     Route::middleware(VerifyApiToken::class)->group(function () {
@@ -55,7 +57,7 @@ Route::middleware("api.response")->group(function () {
 
 
         //Rute za doktore
-        Route::get("/doctors", [DoctorController::class, "index"]);
+       // Route::get("/doctors", [DoctorController::class, "index"]);
         Route::post("/doctors", [DoctorController::class, "store"]);
         Route::delete('/doctors/{id}', [DoctorController::class, 'deleteDoctor']);
         Route::put('/doctors/{id}', [DoctorController::class, 'updateDoctor']);
