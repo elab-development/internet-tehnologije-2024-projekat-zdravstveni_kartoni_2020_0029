@@ -65,18 +65,35 @@ const AddExamination: React.FC<Props> = ({ onSuccess }) => {
     }
   };
 
-  const breadcrumbs = [
-    { label: "Medical Records", view: "patients" },
-    {
-      label: "Medical Record",
-      view: `medical-records/${medicalRecordId}`,
-    },
-    {
-      label: "Examinations",
-      view: `medical-records/${medicalRecordId}/examinations`,
-    },
-    { label: "New Examination", view: "" },
-  ];
+  const breadcrumbs = medicalRecordId
+    ? user?.role === "patient"
+      ? [
+          {
+            label: "Medical Record",
+            view: `patients/medical-record/${medicalRecordId}`,
+          },
+          {
+            label: "Examinations",
+            view: `medical-records/${medicalRecordId}/examinations`,
+          },
+          { label: "New examination", view: `` },
+        ]
+      : [
+          { label: "Patients", view: "patients" },
+          {
+            label: "Medical Record",
+            view: `patients/medical-record/${medicalRecordId}`,
+          },
+          {
+            label: "Examinations",
+            view: `medical-records/${medicalRecordId}/examinations`,
+          },
+          { label: "New examination", view: `` },
+        ]
+    : [
+        { label: "Examinations", view: "examinations" },
+        { label: "New examination", view: `` },
+      ];
 
   return (
     <Layout crumbs1={breadcrumbs}>

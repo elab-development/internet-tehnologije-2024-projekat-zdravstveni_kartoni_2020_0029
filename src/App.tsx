@@ -66,10 +66,14 @@ function App(): React.ReactElement {
           element={<ExaminationInfo />}
         />
 
+        <Route path="/examinations" element={<ExaminationInfo />} />
+
         <Route
           path="/medical-records/:medicalRecordId/examinations/add"
           element={<AddExamination />}
         />
+
+        <Route path="/examinations/add" element={<AddExamination />} />
 
         {/* default route → prebaci na login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

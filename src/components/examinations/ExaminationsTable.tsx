@@ -96,12 +96,18 @@ const ExaminationsTable: React.FC<Props> = ({
         }}
       >
         <Typography variant="h5">Examinations</Typography>
-        {medicalRecordId && userRole !== "patient" && (
+        {userRole !== "patient" && (
           <AddButton
             text="Add Examination"
-            onClick={() =>
-              navigate(`/medical-records/${medicalRecordId}/examinations/add`)
-            }
+            onClick={() => {
+              if (medicalRecordId) {
+                navigate(
+                  `/medical-records/${medicalRecordId}/examinations/add`
+                );
+              } else {
+                navigate(`/examinations/add`); // 👈 globalna ruta kada nije vezan za karton
+              }
+            }}
           />
         )}
       </Box>
@@ -158,7 +164,17 @@ const ExaminationsTable: React.FC<Props> = ({
                   <TableCell>
                     {new Date(exam.examination_date).toLocaleDateString()}
                   </TableCell>
-                  <TableCell>{exam.doctor_name}</TableCell>
+
+                  {/* Doctor */}
+                  <TableCell>
+                    {exam.doctors
+                      ? `${exam.doctors.user.name}${
+                          exam.doctors.specialization
+                            ? ` (${exam.doctors.specialization})`
+                            : ""
+                        }`
+                      : "Nepoznat doktor"}
+                  </TableCell>
 
                   {/* Symptoms */}
                   <TableCell>

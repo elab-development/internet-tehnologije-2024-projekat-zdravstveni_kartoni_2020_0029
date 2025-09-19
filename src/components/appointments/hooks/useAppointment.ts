@@ -1,11 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { api } from "../../../auth/api";
 import { useDebounce } from "use-debounce";
-import { useAuth } from "../../../auth/useAuth"; // 👈 dodaj auth
 
 export const useAppointment = () => {
-  const { user } = useAuth(); // 👈 ovde imamo usera i njegovu rolu/id
-
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +12,7 @@ export const useAppointment = () => {
   const [patientSearch, setPatientSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // debounce
+  // debounce za search (da ne gađa API na svako kucanje)
   const [debouncedPatientSearch] = useDebounce(patientSearch, 400);
   const [debouncedStatusFilter] = useDebounce(statusFilter, 300);
 
@@ -25,16 +22,10 @@ export const useAppointment = () => {
     setError(null);
     try {
       const params: any = {};
-
-      // ako je pacijent ulogovan, automatski filtriramo po njegovom ID-u
-      if (user?.role === "patient") {
-        params.patient_id = user.id; // 👈 backend mora da podrži ovo
-      } else {
-        if (debouncedPatientSearch) params.patient = debouncedPatientSearch;
-      }
-
+      if (debouncedPatientSearch) params.patient = debouncedPatientSearch;
       if (debouncedStatusFilter) params.status = debouncedStatusFilter;
 
+      // 👇 ovo je bitno – prosledi params u api.get
       const res = await api.get("/appointments", { params });
 
       let raw = res.data;
@@ -53,14 +44,13 @@ export const useAppointment = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedPatientSearch, debouncedStatusFilter, user]);
+  }, [debouncedPatientSearch, debouncedStatusFilter]);
 
-  // automatski refetch
+  // automatski refetch kad se filteri promene
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
 
-  // add, update, delete ostaju isti…
   const addAppointment = async (data: any) => {
     setLoading(true);
     setError(null);
@@ -94,6 +84,7 @@ export const useAppointment = () => {
     setError(null);
     setSuccessMsg(null);
     try {
+      // 👇 ispravljena ruta
       const res = await api.put(`/appointments/${id}`, data);
 
       let raw = res.data;

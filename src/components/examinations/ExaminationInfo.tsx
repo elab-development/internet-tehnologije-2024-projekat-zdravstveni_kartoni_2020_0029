@@ -7,7 +7,13 @@ import Layout from "../layout/Layout";
 import { useAuth } from "../../auth/useAuth";
 
 const ExaminationInfo: React.FC = () => {
-  const { medicalRecordId } = useParams<{ medicalRecordId: string }>();
+  const { medicalRecordId } = useParams<{ medicalRecordId?: string }>();
+
+  // Ako parametar nije definisan ili nije validan broj → tretiraj ga kao null
+  const recordId =
+    medicalRecordId && !isNaN(Number(medicalRecordId))
+      ? Number(medicalRecordId)
+      : null;
 
   const {
     examinations,
@@ -29,22 +35,24 @@ const ExaminationInfo: React.FC = () => {
   const { user } = useAuth();
 
   const breadcrumbs =
-    user?.role === "patient"
-      ? [
-          {
-            label: "Medical Record",
-            view: `patients/medical-record/${medicalRecordId}`,
-          },
-          { label: "Examinations", view: `` },
-        ]
-      : [
-          { label: "Patients", view: "patients" },
-          {
-            label: "Medical Record",
-            view: `patients/medical-record/${medicalRecordId}`,
-          },
-          { label: "Examinations", view: `` },
-        ];
+    recordId !== null
+      ? user?.role === "patient"
+        ? [
+            {
+              label: "Medical Record",
+              view: `patients/medical-record/${recordId}`,
+            },
+            { label: "Examinations", view: `` },
+          ]
+        : [
+            { label: "Patients", view: "patients" },
+            {
+              label: "Medical Record",
+              view: `patients/medical-record/${recordId}`,
+            },
+            { label: "Examinations", view: `` },
+          ]
+      : [{ label: "Examinations", view: `` }];
 
   return (
     <Layout crumbs1={breadcrumbs}>

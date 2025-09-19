@@ -6,15 +6,34 @@ export type Examination = {
   appointment_id: number | null;
   medical_record_id: number;
   doctor_id: number;
-  doctor_name: string;
   symptom_description: string;
   examination_date: string;
   diagnosis: string;
   therapy: string;
-  medical_record?: any;
+  medical_record?: {
+    id: number;
+    patient: {
+      id: number;
+      user: {
+        id: number;
+        name: string;
+        email: string;
+      };
+    };
+  };
+  doctors?: {
+    id: number;
+    specialization: string;
+    description?: string;
+    user: {
+      id: number;
+      name: string;
+      email: string;
+    };
+  };
 };
 
-export const useExaminations = (medicalRecordId: number | null) => {
+export const useExaminations = (medicalRecordId: number | null = null) => {
   const [examinations, setExaminations] = useState<Examination[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,15 +42,15 @@ export const useExaminations = (medicalRecordId: number | null) => {
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchExaminations = useCallback(async () => {
-    if (!medicalRecordId) return;
-
     setLoading(true);
     setError(null);
 
     try {
-      const res = await api.get(
-        `/medical-records/${medicalRecordId}/examinations?page=${page}&per_page=10`
-      );
+      const endpoint = medicalRecordId
+        ? `/medical-records/${medicalRecordId}/examinations?page=${page}&per_page=10`
+        : `/examinations?page=${page}&per_page=10`;
+
+      const res = await api.get(endpoint);
 
       let raw = res.data;
       if (typeof raw === "string") {
@@ -115,15 +134,9 @@ export const useExaminations = (medicalRecordId: number | null) => {
         }
 
         if (raw.success) {
-          setExaminations((prev) =>
-            prev.map((exam) => (exam.id === id ? { ...exam, ...data } : exam))
-          );
-
+          await fetchExaminations(); // 🔄 refetch posle update-a
           setSuccessMsg("Pregled uspešno ažuriran ✅");
           setTimeout(() => setSuccessMsg(null), 2000);
-
-          await fetchExaminations(); // 🔄 refetch odmah posle update-a
-
           return true;
         } else {
           setError("❌ Neuspešno ažuriranje pregleda");
