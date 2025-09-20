@@ -14,7 +14,7 @@ class ExaminationSeeder extends Seeder
 
         foreach ($medicalRecords as $record) {
             $examinationCount = rand(1, 5);
-            
+
             Examination::factory()
                 ->count($examinationCount)
                 ->forMedicalRecord($record->id)

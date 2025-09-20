@@ -2,18 +2,23 @@
 
 namespace Database\Factories;
 
+use App\Models\Doctor;
+use App\Models\MedicalRecord;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ExaminationFactory extends Factory
 {
     public function definition(): array
     {
-        $medicalRecord = \App\Models\MedicalRecord::factory()->create();
-        
+        // napravi medical record ako nema
+        $medicalRecord = MedicalRecord::factory()->create();
+
+        // uzmi random doktora ili kreiraj jednog
+        $doctor = Doctor::inRandomOrder()->first() ?? Doctor::factory()->create();
+
         return [
             'medical_record_id' => $medicalRecord->id,
-            'doctor_id' => $medicalRecord->doctor_id,
-            'doctor_name' => $medicalRecord->doctor->user->name,
+            'doctor_id' => $doctor->id,
             'symptom_description' => $this->generateSymptoms(),
             'examination_date' => $this->faker->dateTimeBetween($medicalRecord->opening_date, 'now'),
             'diagnosis' => $this->generateDiagnosis(),
@@ -59,11 +64,12 @@ class ExaminationFactory extends Factory
         return $this->faker->randomElement($therapies);
     }
 
+    // Ako želiš da eksplicitno dodaš record
     public function forMedicalRecord($medicalRecordId)
     {
         return $this->state(fn (array $attributes) => [
             'medical_record_id' => $medicalRecordId,
-            'doctor_id' => \App\Models\MedicalRecord::find($medicalRecordId)->doctor_id
+            'doctor_id' => Doctor::inRandomOrder()->first()?->id ?? Doctor::factory()->create()->id,
         ]);
     }
 }

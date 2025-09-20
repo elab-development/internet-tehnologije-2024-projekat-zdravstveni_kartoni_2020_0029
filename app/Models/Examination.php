@@ -12,7 +12,6 @@ class Examination extends Model
     protected $fillable = [
         'medical_record_id',
         'doctor_id',
-        'doctor_name',
         'symptom_description',
         'examination_date',
         'diagnosis',
@@ -26,5 +25,10 @@ class Examination extends Model
     public function medicalRecord()
     {
         return $this->belongsTo(MedicalRecord::class);
+    }
+
+    public function doctors()
+    {
+        return $this->belongsTo(Doctor::class, 'doctor_id');
     }
 }

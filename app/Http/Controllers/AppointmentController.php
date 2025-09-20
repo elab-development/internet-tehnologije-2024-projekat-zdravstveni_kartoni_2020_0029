@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 class AppointmentController extends Controller
 {
     /**
-     * Vrati termine za doktora ili sve ako je admin.
+     * Vrati termine za doktora, pacijenta, sestru ili sve ako je admin.
      */
     public function index(Request $request)
     {
@@ -16,64 +16,72 @@ class AppointmentController extends Controller
 
         $query = Appointment::with([
             'medicalRecord.patient.user:id,name,email',
-            'user:id,name,email'
+            'user:id,name,email',
+            'doctor.user:id,name,email'
         ]);
 
-        // 🔎 filtriranje po pacijentu (ime pacijenta)
+        // filter pacijenta
         if ($request->filled('patient')) {
             $search = $request->input('patient');
-            $query->whereHas('medicalRecord.patient', function ($q) use ($search) {
-                $q->whereHas('user', function ($sub) use ($search) {
-                    $sub->where('name', 'like', '%' . $search . '%');
-                });
+            $query->whereHas('medicalRecord.patient.user', function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%');
             });
         }
 
-        // 🔎 filtriranje po statusu
+        // filter doktora
+        if ($request->filled('doctor')) {
+            $search = $request->input('doctor');
+            $query->whereHas('doctor.user', function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%');
+            });
+        }
+
+        // filter statusa
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
         }
 
-        // 👮 restrikcija po ulozi
+        // restrikcija po ulozi
         if ($user->role !== 'admin') {
-            $query->whereHas('medicalRecord', function ($q) use ($user) {
-                if ($user->role === 'doctor') {
-                    $q->where('doctor_id', $user->id);
-                } elseif ($user->role === 'nurse') {
-                    $q->where('nurse_id', $user->id);
-                } elseif ($user->role === 'patient') {
-                    // 🔥 pacijent vidi samo svoje termine
+            if ($user->role === 'doctor') {
+                $query->where('doctor_id', $user->doctorProfile->id);
+            } elseif ($user->role === 'nurse') {
+                $query->where('nurse_id', $user->id);
+            } elseif ($user->role === 'patient') {
+                $query->whereHas('medicalRecord', function ($q) use ($user) {
                     $q->where('patient_id', $user->patientProfile->id);
-                    // pretpostavljam da imaš relaciju User->patientProfile
-                }
-            });
+                });
+            }
         }
 
         $appointments = $query->get()->map(function ($appointment) {
             return [
-                'appointment_id' => $appointment->id,
-                'patient' => $appointment->medicalRecord->patient->user->name ?? 'Nepoznat',
-                'scheduled_by' => $appointment->user->name ?? 'Nepoznat',
+                'appointment_id'   => $appointment->id,
+                'patient'          => $appointment->medicalRecord->patient->user->name ?? 'Nepoznat',
+                'scheduled_by'     => $appointment->user->name ?? 'Nepoznat',
+                'doctor'           => $appointment->doctor ? [
+                    'id'             => $appointment->doctor->id,
+                    'name'           => $appointment->doctor->user->name,
+                    'specialization' => $appointment->doctor->specialization,
+                ] : null,
                 'appointment_date' => $appointment->appointment_date,
-                'status' => $appointment->status,
+                'status'           => $appointment->status,
             ];
         });
 
         return response()->json([
             'success' => true,
-            'data' => $appointments,
+            'data'    => $appointments,
         ]);
     }
 
-
-
-
-
+    /**
+     * Kreiraj novi termin.
+     */
     public function store(Request $request)
     {
         $user = $request->user();
 
-        // Provera dozvole za kreiranje
         if (!in_array($user->role, ['admin', 'nurse'])) {
             return response()->json([
                 'success' => false,
@@ -81,37 +89,42 @@ class AppointmentController extends Controller
             ], 403);
         }
 
-        // Validacija ulaznih podataka
         $data = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id'           => 'required|exists:users,id',
             'medical_record_id' => 'required|exists:medical_records,id',
-            'scheduled_at' => 'required|date',
-            'appointment_date' => 'required|date|after_or_equal:today',
-            'status' => 'required|in:scheduled,completed,canceled,no_show',
+            'doctor_id'         => 'required|exists:doctors,id',
+            'scheduled_at'      => 'required|date',
+            'appointment_date'  => 'required|date|after_or_equal:today',
+            'status'            => 'required|in:scheduled,completed,canceled,no_show',
         ]);
 
-        // Kreiranje novog termina
-        $appointment = \App\Models\Appointment::create($data);
+        $appointment = Appointment::create($data);
 
         return response()->json([
             'success' => true,
-            'data' => $appointment
+            'data'    => [
+                'appointment_id'   => $appointment->id,
+                'patient'          => $appointment->medicalRecord->patient->user->name ?? 'Nepoznat',
+                'scheduled_by'     => $appointment->user->name ?? 'Nepoznat',
+                'doctor'           => $appointment->doctor ? [
+                    'id'             => $appointment->doctor->id,
+                    'name'           => $appointment->doctor->user->name,
+                    'specialization' => $appointment->doctor->specialization,
+                ] : null,
+                'appointment_date' => $appointment->appointment_date,
+                'status'           => $appointment->status,
+            ]
         ], 201);
     }
 
+    /**
+     * Menjaj status ili doktora.
+     */
     public function updateStatus(Request $request, $id)
     {
         $user = $request->user();
+        $appointment = Appointment::findOrFail($id);
 
-        // provera da li postoji user
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Niste autentifikovani.'
-            ], 401);
-        }
-
-        // Samo admin ili doktor mogu menjati status
         if (!in_array($user->role, ['admin', 'doctor'])) {
             return response()->json([
                 'success' => false,
@@ -119,20 +132,28 @@ class AppointmentController extends Controller
             ], 403);
         }
 
-        // ako ne postoji termin, automatski baci 404
-        $appointment = Appointment::findOrFail($id);
-
         $validated = $request->validate([
-            'status' => 'required|in:scheduled,completed,canceled,no_show',
+            'status'    => 'sometimes|in:scheduled,completed,canceled,no_show',
+            'doctor_id' => 'sometimes|exists:doctors,id',
         ]);
 
-        $appointment->status = $validated['status'];
-        $appointment->save();
+        $appointment->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Status termina uspešno ažuriran.',
-            'data' => $appointment,
+            'message' => 'Termin uspešno ažuriran.',
+            'data'    => [
+                'appointment_id'   => $appointment->id,
+                'patient'          => $appointment->medicalRecord->patient->user->name ?? 'Nepoznat',
+                'scheduled_by'     => $appointment->user->name ?? 'Nepoznat',
+                'doctor'           => $appointment->doctor ? [
+                    'id'             => $appointment->doctor->id,
+                    'name'           => $appointment->doctor->user->name,
+                    'specialization' => $appointment->doctor->specialization,
+                ] : null,
+                'appointment_date' => $appointment->appointment_date,
+                'status'           => $appointment->status,
+            ]
         ]);
     }
 
@@ -150,7 +171,6 @@ class AppointmentController extends Controller
             ], 401);
         }
 
-        // Samo admin može brisati
         if ($user->role !== 'admin') {
             return response()->json([
                 'success' => false,
@@ -166,8 +186,4 @@ class AppointmentController extends Controller
             'message' => 'Termin uspešno obrisan.'
         ]);
     }
-
-
 }
-
-

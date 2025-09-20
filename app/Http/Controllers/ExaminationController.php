@@ -25,55 +25,52 @@ class ExaminationController extends Controller
         }
 
         $validated = $request->validate([
-            'medical_record_id' => 'required|exists:medical_records,id',
-            'symptom_description' => 'required|string|max:1000',
-            'diagnosis' => 'required|string|max:500',
-            'therapy' => 'required|string|max:500',
+            'medical_record_id'     => 'required|exists:medical_records,id',
+            'symptom_description'   => 'required|string|max:1000',
+            'diagnosis'             => 'required|string|max:500',
+            'therapy'               => 'required|string|max:500',
         ]);
 
         $medicalRecord = MedicalRecord::findOrFail($validated['medical_record_id']);
 
-        // Ako je doktor → proveri da li karton pripada njemu
+        // Ako je doktor → dozvoli kreiranje pregleda samo njemu
         if ($user->isDoctor()) {
             $doctor = $user->doctorProfile;
-            if ($medicalRecord->doctor_id !== $doctor->id) {
+            if (!$doctor) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Nemate pristup ovom zdravstvenom kartonu'
+                    'message' => 'Nemate profil lekara'
                 ], 403);
             }
         }
 
-        // Ako je admin → samo koristi podatke iz kartona
+        // Ako je admin → koristi doctor_id iz kartona
         $doctorId = $user->isDoctor() ? $user->doctorProfile->id : $medicalRecord->doctor_id;
-        $doctorName = $user->isDoctor() ? $user->name : $medicalRecord->doctor->user->name;
 
         $examination = Examination::create([
-            'medical_record_id' => $medicalRecord->id,
-            'doctor_id' => $doctorId,
-            'doctor_name' => $doctorName,
-            'symptom_description' => $validated['symptom_description'],
-            'examination_date' => now(),
-            'diagnosis' => $validated['diagnosis'],
-            'therapy' => $validated['therapy'],
+            'medical_record_id'     => $medicalRecord->id,
+            'doctor_id'             => $doctorId,
+            'symptom_description'   => $validated['symptom_description'],
+            'examination_date'      => now(),
+            'diagnosis'             => $validated['diagnosis'],
+            'therapy'               => $validated['therapy'],
         ]);
 
         return response()->json([
             'success' => true,
-            'data' => $examination->load('medicalRecord.patient.user')
+            'data' => $examination->load(['medicalRecord.patient.user', 'doctors.user'])
         ], 201);
     }
 
-
     /**
-     * Prikaz pregleda - za pacijenta (samo njegove) ili lekara (samo njegove)
+     * Lista pregleda
      */
     public function index(Request $request)
     {
         $user = Auth::user();
         $query = Examination::query();
 
-        // 🔹 Filtriranje po medical_record_id
+        // 🔹 Filtriranje po kartonu
         if ($request->has('medical_record_id')) {
             $query->where('medical_record_id', $request->medical_record_id);
         }
@@ -84,14 +81,11 @@ class ExaminationController extends Controller
             $query->whereHas('medicalRecord', function($q) use ($patient) {
                 $q->where('patient_id', $patient->id);
             });
-        } 
-        elseif ($user->isDoctor()) {
+        } elseif ($user->isDoctor()) {
             $query->where('doctor_id', $user->doctorProfile->id);
-        } 
-        elseif ($user->isAdmin()) {
-            // admin vidi sve, ali i dalje može koristiti filter
-        } 
-        else {
+        } elseif ($user->isAdmin()) {
+            // admin vidi sve
+        } else {
             return response()->json([
                 'success' => false,
                 'message' => 'Nemate pristup pregledima'
@@ -111,8 +105,8 @@ class ExaminationController extends Controller
         $direction = $request->get('direction', 'desc');
         $query->orderBy($sort, $direction);
 
-        $examinations = $query->with(['medicalRecord.patient.user'])
-                            ->paginate($request->get('per_page', 15));
+        $examinations = $query->with(['medicalRecord.patient.user', 'doctors.user'])
+                              ->paginate($request->get('per_page', 15));
 
         return response()->json([
             'success' => true,
@@ -120,17 +114,15 @@ class ExaminationController extends Controller
         ]);
     }
 
-
-
     /**
      * Prikaz pojedinačnog pregleda
      */
     public function show($id)
     {
-        $examination = Examination::with(['medicalRecord.patient.user'])->findOrFail($id);
+        $examination = Examination::with(['medicalRecord.patient.user', 'doctors.user'])->findOrFail($id);
         $user = Auth::user();
 
-        // Provera ovlašćenja
+        // Pacijent može videti samo svoje preglede
         if ($user->isPatient() && $examination->medicalRecord->patient_id !== $user->patientProfile->id) {
             return response()->json([
                 'success' => false,
@@ -138,6 +130,7 @@ class ExaminationController extends Controller
             ], 403);
         }
 
+        // Doktor može videti samo svoje preglede
         if ($user->isDoctor() && $examination->doctor_id !== $user->doctorProfile->id) {
             return response()->json([
                 'success' => false,
@@ -175,23 +168,20 @@ class ExaminationController extends Controller
             ], 403);
         }
 
-        // ✅ Validacija unosa
         $validated = $request->validate([
             'symptom_description' => 'sometimes|string|max:1000',
             'diagnosis'           => 'sometimes|string|max:500',
             'therapy'             => 'sometimes|string|max:500',
         ]);
 
-        // ✅ Update pregleda
         $examination->update($validated);
 
         return response()->json([
             'success' => true,
-            'data'    => $examination->fresh(['medicalRecord.patient.user']),
+            'data'    => $examination->fresh(['medicalRecord.patient.user', 'doctors.user']),
             'message' => 'Pregled uspešno izmenjen'
         ]);
     }
-
 
     /**
      * Brisanje pregleda
@@ -201,7 +191,6 @@ class ExaminationController extends Controller
         $examination = Examination::findOrFail($id);
         $user = Auth::user();
 
-        // Ako je doktor, mora da bude vlasnik pregleda
         if ($user->isDoctor() && $examination->doctor_id !== $user->doctorProfile->id) {
             return response()->json([
                 'success' => false,
@@ -209,10 +198,8 @@ class ExaminationController extends Controller
             ], 403);
         }
 
-        // Admin može sve
         if ($user->isAdmin() || $user->isDoctor()) {
             $examination->delete();
-
             return response()->json([
                 'success' => true,
                 'message' => 'Pregled uspešno obrisan'
@@ -225,12 +212,13 @@ class ExaminationController extends Controller
         ], 403);
     }
 
+    /**
+     * Pregledi po kartonu
+     */
     public function getByMedicalRecord($medicalRecordId, Request $request)
     {
         $user = Auth::user();
-
-        // Pronađi karton
-        $medicalRecord = \App\Models\MedicalRecord::with('patient')->find($medicalRecordId);
+        $medicalRecord = MedicalRecord::with('patient')->find($medicalRecordId);
 
         if (!$medicalRecord) {
             return response()->json([
@@ -239,7 +227,10 @@ class ExaminationController extends Controller
             ], 404);
         }
 
-        // 🔒 Provera pristupa
+        $query = Examination::where('medical_record_id', $medicalRecordId)
+            ->with(['medicalRecord.patient.user', 'doctors.user']);
+
+        // Pacijent vidi samo svoj karton
         if ($user->isPatient()) {
             $patient = $user->patientProfile;
             if (!$patient || $patient->id !== $medicalRecord->patient_id) {
@@ -250,26 +241,17 @@ class ExaminationController extends Controller
             }
         }
 
+        // Doktor vidi samo preglede koje je on uradio
         if ($user->isDoctor()) {
             $doctorId = $user->doctorProfile->id ?? null;
-            if (!$doctorId || $doctorId !== $medicalRecord->doctor_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Nemate pristup ovom kartonu'
-                ], 403);
-            }
+            $query->where('doctor_id', $doctorId);
         }
 
-        // Tek ovde pravi query za preglede
-        $query = Examination::where('medical_record_id', $medicalRecordId)
-            ->with(['medicalRecord.patient.user']);
-
-        // sortiranje
+        // Sortiranje
         $sort = $request->get('sort', 'examination_date');
         $direction = $request->get('direction', 'desc');
         $query->orderBy($sort, $direction);
 
-        // paginacija
         $examinations = $query->paginate($request->get('per_page', 10));
 
         return response()->json([
@@ -277,7 +259,4 @@ class ExaminationController extends Controller
             'data' => $examinations
         ]);
     }
-
-
-
 }

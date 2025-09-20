@@ -12,13 +12,13 @@ class Appointment extends Model
     protected $fillable = [
         'user_id',
         'medical_record_id',
+        'doctor_id',          
         'scheduled_at',
         'appointment_date',
         'status',
     ];
 
-    // Relacije
-
+    // Ko je kreirao termin (admin/nurse)
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -30,8 +30,15 @@ class Appointment extends Model
         return $this->belongsTo(MedicalRecord::class);
     }
 
+    // Vezan doktor
+    public function doctor()
+    {
+        return $this->belongsTo(Doctor::class);
+    }
+
+    // Ako želiš vezu sa pregledom (1 termin → 1 pregled, opciono)
     public function examination()
     {
-        return $this->belongsTo(Examination::class);
+        return $this->hasOne(Examination::class);
     }
 }
