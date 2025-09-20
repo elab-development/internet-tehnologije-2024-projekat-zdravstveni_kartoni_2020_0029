@@ -22,7 +22,7 @@ type Props = {
 
 const statusOptions = ["scheduled", "completed", "canceled", "no_show"];
 
-// Helper: vrati string u formatu "YYYY-MM-DDTHH:mm" (za datetime-local input)
+// Helper: vrati string u formatu "YYYY-MM-DDTHH:mm"
 const getTodayDateTime = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -50,7 +50,7 @@ const AddAppointment = ({ onSuccess }: Props) => {
   const [form, setForm] = useState({
     patient_id: "",
     doctor_id: "",
-    scheduled_at: getTodayDateTime(), // današnji datum
+    scheduled_at: getTodayDateTime(),
     appointment_date: "",
     status: "scheduled",
   });
@@ -134,14 +134,21 @@ const AddAppointment = ({ onSuccess }: Props) => {
       return;
     }
 
-    await addAppointment({
-      user_id: user?.id,
+    // ✨ Novi payload po kontroleru
+    const payload: any = {
       medical_record_id: medicalRecordId,
       doctor_id: form.doctor_id,
       scheduled_at: scheduledAtFormatted,
       appointment_date: appointmentDateFormatted,
       status: form.status as "scheduled" | "completed" | "canceled" | "no_show",
-    });
+    };
+
+    // Sestra mora imati nurse_id = njen profil
+    if (user?.role === "nurse") {
+      payload.nurse_id = user.nurse?.id;
+    }
+
+    await addAppointment(payload);
 
     if (!error) {
       onSuccess();
@@ -247,7 +254,7 @@ const AddAppointment = ({ onSuccess }: Props) => {
               fullWidth
               margin="normal"
               value={form.scheduled_at}
-              disabled // 👈 korisnik ne može menjati
+              disabled
               InputLabelProps={{ shrink: true }}
             />
 

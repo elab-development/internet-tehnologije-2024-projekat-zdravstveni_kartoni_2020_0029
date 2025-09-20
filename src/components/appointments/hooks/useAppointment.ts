@@ -6,13 +6,18 @@ import { useDebounce } from "use-debounce";
 export interface AppointmentRecord {
   appointment_id: number;
   patient: string;
-  scheduled_by: string;
   appointment_date: string;
   status: string;
   doctor?: {
     id: number;
     name: string;
     specialization: string;
+  } | null;
+  nurse?: {
+    id: number;
+    user_id: number;
+    name: string;
+    email: string;
   } | null;
 }
 
@@ -24,10 +29,12 @@ export const useAppointment = () => {
 
   // 🔎 filter state
   const [patientSearch, setPatientSearch] = useState("");
+  const [doctorSearch, setDoctorSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
   // debounce za search
   const [debouncedPatientSearch] = useDebounce(patientSearch, 400);
+  const [debouncedDoctorSearch] = useDebounce(doctorSearch, 400);
   const [debouncedStatusFilter] = useDebounce(statusFilter, 300);
 
   // fetch appointments
@@ -37,6 +44,7 @@ export const useAppointment = () => {
     try {
       const params: any = {};
       if (debouncedPatientSearch) params.patient = debouncedPatientSearch;
+      if (debouncedDoctorSearch) params.doctor = debouncedDoctorSearch;
       if (debouncedStatusFilter) params.status = debouncedStatusFilter;
 
       const res = await api.get("/appointments", { params });
@@ -48,11 +56,9 @@ export const useAppointment = () => {
       }
 
       if (raw.success && Array.isArray(raw.data)) {
-        // ✅ mapiramo response da hook uvek vrati tipizovan objekat
         const mapped: AppointmentRecord[] = raw.data.map((a: any) => ({
           appointment_id: a.appointment_id,
           patient: a.patient,
-          scheduled_by: a.scheduled_by,
           appointment_date: a.appointment_date,
           status: a.status,
           doctor: a.doctor
@@ -62,17 +68,26 @@ export const useAppointment = () => {
                 specialization: a.doctor.specialization,
               }
             : null,
+          nurse: a.nurse
+            ? {
+                id: a.nurse.id,
+                user_id: a.nurse.user_id,
+                name: a.nurse.name,
+                email: a.nurse.email,
+              }
+            : null,
         }));
         setAppointments(mapped);
       } else {
         setError("Nepoznat format odgovora sa servera");
       }
     } catch (err: any) {
+      console.error("Greška API:", err);
       setError("Greška prilikom učitavanja termina");
     } finally {
       setLoading(false);
     }
-  }, [debouncedPatientSearch, debouncedStatusFilter]);
+  }, [debouncedPatientSearch, debouncedDoctorSearch, debouncedStatusFilter]);
 
   useEffect(() => {
     fetchAppointments();
@@ -98,6 +113,7 @@ export const useAppointment = () => {
         setError("Neuspešan pokušaj kreiranja termina");
       }
     } catch (err: any) {
+      console.error("Greška pri dodavanju:", err);
       setError(
         err.response?.data?.message || "Greška prilikom dodavanja termina"
       );
@@ -129,6 +145,7 @@ export const useAppointment = () => {
         setError("Neuspešan pokušaj ažuriranja termina");
       }
     } catch (err: any) {
+      console.error("Greška pri izmeni:", err);
       setError(
         err.response?.data?.message || "Greška prilikom ažuriranja termina"
       );
@@ -157,6 +174,7 @@ export const useAppointment = () => {
         setError("Neuspešan pokušaj brisanja termina");
       }
     } catch (err: any) {
+      console.error("Greška pri brisanju:", err);
       setError(
         err.response?.data?.message || "Greška prilikom brisanja termina"
       );
@@ -178,6 +196,8 @@ export const useAppointment = () => {
     // filteri
     patientSearch,
     setPatientSearch,
+    doctorSearch,
+    setDoctorSearch,
     statusFilter,
     setStatusFilter,
   };

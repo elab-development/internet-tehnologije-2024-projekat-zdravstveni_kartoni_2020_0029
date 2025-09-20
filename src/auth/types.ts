@@ -1,4 +1,4 @@
-export type Role = "patient" | "doctor" | "admin";
+export type Role = "patient" | "doctor" | "admin" | "nurse";
 
 export interface User {
   id: number;
@@ -19,7 +19,3 @@ export interface BackendResponse<T = any> {
   data?: T;
   message?: string;
 }
-
-
-
-

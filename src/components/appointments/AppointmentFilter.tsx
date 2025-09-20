@@ -6,6 +6,7 @@ import {
   MenuItem,
   Button,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
@@ -26,6 +27,8 @@ const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
 }) => {
   const statusOptions = ["scheduled", "completed", "canceled", "no_show"];
   const navigate = useNavigate();
+
+  const canCreate = user?.role === "admin" || user?.role === "nurse";
 
   return (
     <Box
@@ -64,13 +67,21 @@ const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
         </Select>
 
         {/* Dugme za dodavanje termina */}
-        {(user?.role === "admin" || user?.role === "nurse") && (
+        {canCreate ? (
           <Button
             variant="contained"
-            onClick={() => navigate("/appointments/addAppointment")} // 👈 ide na rutu
+            onClick={() => navigate("/appointments/addAppointment")}
           >
             New Appointment
           </Button>
+        ) : (
+          <Tooltip title="Samo administrator i sestra mogu da kreiraju termine">
+            <span>
+              <Button variant="contained" disabled>
+                New Appointment
+              </Button>
+            </span>
+          </Tooltip>
         )}
       </Box>
     </Box>

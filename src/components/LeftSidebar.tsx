@@ -14,6 +14,7 @@ import {
   adminMenuItems,
   doctorMenuItems,
   patientMenuItems,
+  nurseMenuItems,
 } from "../constants/leftsideitems";
 import { api } from "../auth/api";
 import { useEffect, useState } from "react";
@@ -77,7 +78,9 @@ const LeftSidebar = ({ activeView, onSelect }: Props) => {
       ? adminMenuItems
       : user?.role === "doctor"
       ? doctorMenuItems
-      : patientMenuItems;
+      : user?.role === "patient"
+      ? patientMenuItems
+      : nurseMenuItems;
 
   return (
     <Paper
