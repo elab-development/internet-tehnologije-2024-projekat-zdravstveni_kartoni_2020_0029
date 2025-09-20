@@ -10,19 +10,13 @@ class Appointment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
         'medical_record_id',
-        'doctor_id',          
+        'doctor_id',
+        'nurse_id',           // 👈 dodato
         'scheduled_at',
         'appointment_date',
         'status',
     ];
-
-    // Ko je kreirao termin (admin/nurse)
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
 
     // Vezan medical record
     public function medicalRecord()
@@ -34,6 +28,12 @@ class Appointment extends Model
     public function doctor()
     {
         return $this->belongsTo(Doctor::class);
+    }
+
+    // Vezana sestra
+    public function nurse()
+    {
+        return $this->belongsTo(Nurse::class);
     }
 
     // Ako želiš vezu sa pregledom (1 termin → 1 pregled, opciono)

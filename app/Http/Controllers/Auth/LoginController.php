@@ -57,6 +57,7 @@ class LoginController extends Controller
             UserRole::ADMIN->value => '/admin',
             UserRole::DOCTOR->value => '/doctor',
             UserRole::PATIENT->value => '/patient',
+            UserRole::NURSE->value => '/nurse',
             default => '/home',
         };
     }
