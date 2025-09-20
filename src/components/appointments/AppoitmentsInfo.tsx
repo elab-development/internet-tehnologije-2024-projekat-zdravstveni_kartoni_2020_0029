@@ -31,9 +31,15 @@ import AppointmentFilters from "./AppointmentFilter";
 import { useAuth } from "../../auth/useAuth";
 import Layout from "../layout/Layout";
 
+// ➕ dodali smo polje doctor
 export interface AppointmentRecord {
   appointment_id: number;
   patient: string;
+  doctor?: {
+    id: number;
+    name: string;
+    specialization: string;
+  } | null;
   scheduled_by: string;
   appointment_date: string;
   status: string;
@@ -69,7 +75,6 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
   const [localStatus, setLocalStatus] = useState<string>("");
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // ❗ state za potvrdu brisanja
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<number | null>(
     null
@@ -154,6 +159,7 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
               <TableRow>
                 <TableCell>ID</TableCell>
                 <TableCell>Patient</TableCell>
+                <TableCell>Doctor</TableCell> {/* ➕ nova kolona */}
                 <TableCell>Scheduled By</TableCell>
                 <TableCell>Appointment Date</TableCell>
                 <TableCell>Status</TableCell>
@@ -167,6 +173,11 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
                 <TableRow key={record.appointment_id} hover>
                   <TableCell>{record.appointment_id}</TableCell>
                   <TableCell>{record.patient}</TableCell>
+                  <TableCell>
+                    {record.doctor
+                      ? `${record.doctor.name} (${record.doctor.specialization})`
+                      : "Nepoznat"}
+                  </TableCell>
                   <TableCell>{record.scheduled_by}</TableCell>
                   <TableCell>
                     {new Date(record.appointment_date).toLocaleString()}
@@ -257,7 +268,6 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
           </Box>
         )}
 
-        {/* Snackbar za uspeh */}
         <Snackbar
           open={showSuccess && !!successMsg}
           autoHideDuration={3000}
@@ -273,7 +283,6 @@ const AppoitmentInfo = ({ onAddAppointment }: Props) => {
           </Alert>
         </Snackbar>
 
-        {/* Dialog za potvrdu brisanja */}
         <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
           <DialogTitle>Potvrda brisanja</DialogTitle>
           <DialogContent>

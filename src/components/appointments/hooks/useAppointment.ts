@@ -2,8 +2,22 @@ import { useState, useCallback, useEffect } from "react";
 import { api } from "../../../auth/api";
 import { useDebounce } from "use-debounce";
 
+// Tipizovan appointment
+export interface AppointmentRecord {
+  appointment_id: number;
+  patient: string;
+  scheduled_by: string;
+  appointment_date: string;
+  status: string;
+  doctor?: {
+    id: number;
+    name: string;
+    specialization: string;
+  } | null;
+}
+
 export const useAppointment = () => {
-  const [appointments, setAppointments] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -12,11 +26,11 @@ export const useAppointment = () => {
   const [patientSearch, setPatientSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // debounce za search (da ne gađa API na svako kucanje)
+  // debounce za search
   const [debouncedPatientSearch] = useDebounce(patientSearch, 400);
   const [debouncedStatusFilter] = useDebounce(statusFilter, 300);
 
-  // fetch appointments sa filterima
+  // fetch appointments
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -25,7 +39,6 @@ export const useAppointment = () => {
       if (debouncedPatientSearch) params.patient = debouncedPatientSearch;
       if (debouncedStatusFilter) params.status = debouncedStatusFilter;
 
-      // 👇 ovo je bitno – prosledi params u api.get
       const res = await api.get("/appointments", { params });
 
       let raw = res.data;
@@ -35,7 +48,22 @@ export const useAppointment = () => {
       }
 
       if (raw.success && Array.isArray(raw.data)) {
-        setAppointments(raw.data);
+        // ✅ mapiramo response da hook uvek vrati tipizovan objekat
+        const mapped: AppointmentRecord[] = raw.data.map((a: any) => ({
+          appointment_id: a.appointment_id,
+          patient: a.patient,
+          scheduled_by: a.scheduled_by,
+          appointment_date: a.appointment_date,
+          status: a.status,
+          doctor: a.doctor
+            ? {
+                id: a.doctor.id,
+                name: a.doctor.name,
+                specialization: a.doctor.specialization,
+              }
+            : null,
+        }));
+        setAppointments(mapped);
       } else {
         setError("Nepoznat format odgovora sa servera");
       }
@@ -46,7 +74,6 @@ export const useAppointment = () => {
     }
   }, [debouncedPatientSearch, debouncedStatusFilter]);
 
-  // automatski refetch kad se filteri promene
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
@@ -79,12 +106,14 @@ export const useAppointment = () => {
     }
   };
 
-  const updateAppointment = async (id: number, data: { status: string }) => {
+  const updateAppointment = async (
+    id: number,
+    data: { status?: string; doctor_id?: number }
+  ) => {
     setLoading(true);
     setError(null);
     setSuccessMsg(null);
     try {
-      // 👇 ispravljena ruta
       const res = await api.put(`/appointments/${id}`, data);
 
       let raw = res.data;

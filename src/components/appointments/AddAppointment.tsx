@@ -22,6 +22,17 @@ type Props = {
 
 const statusOptions = ["scheduled", "completed", "canceled", "no_show"];
 
+// Helper: vrati string u formatu "YYYY-MM-DDTHH:mm" (za datetime-local input)
+const getTodayDateTime = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 const AddAppointment = ({ onSuccess }: Props) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -32,19 +43,24 @@ const AddAppointment = ({ onSuccess }: Props) => {
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [patientsError, setPatientsError] = useState<string | null>(null);
 
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [doctorsLoading, setDoctorsLoading] = useState(false);
+  const [doctorsError, setDoctorsError] = useState<string | null>(null);
+
   const [form, setForm] = useState({
     patient_id: "",
-    scheduled_at: "",
+    doctor_id: "",
+    scheduled_at: getTodayDateTime(), // današnji datum
     appointment_date: "",
     status: "scheduled",
   });
 
-  // 🔥 Fetch pacijenata – vraća sve relevantne (admin sve, doktor samo svoje)
-  const fetchAllPatients = async () => {
+  // Fetch pacijenata
+  const fetchAllPatients = async (search = "") => {
     setPatientsLoading(true);
     setPatientsError(null);
     try {
-      const res = await api.get("/patients?per_page=1000"); // uzmi sve (ili napravi poseban endpoint)
+      const res = await api.get(`/patients?per_page=20&search=${search}`);
       let raw = res.data;
       if (typeof raw === "string") {
         raw = raw.replace(/^\uFEFF/, "");
@@ -63,8 +79,33 @@ const AddAppointment = ({ onSuccess }: Props) => {
     }
   };
 
+  // Fetch doktora
+  const fetchAllDoctors = async (search = "") => {
+    setDoctorsLoading(true);
+    setDoctorsError(null);
+    try {
+      const res = await api.get(`/doctors?per_page=20&search=${search}`);
+      let raw = res.data;
+      if (typeof raw === "string") {
+        raw = raw.replace(/^\uFEFF/, "");
+        raw = JSON.parse(raw);
+      }
+      if (raw.success && Array.isArray(raw.data?.data)) {
+        setDoctors(raw.data.data);
+      } else {
+        setDoctorsError("Nepoznat format odgovora sa servera");
+      }
+    } catch (err) {
+      console.error("Greška prilikom učitavanja doktora:", err);
+      setDoctorsError("Greška prilikom učitavanja doktora");
+    } finally {
+      setDoctorsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchAllPatients();
+    fetchAllDoctors();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,7 +115,10 @@ const AddAppointment = ({ onSuccess }: Props) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.patient_id) return;
+    if (!form.patient_id || !form.doctor_id) {
+      alert("❌ Morate odabrati i pacijenta i doktora");
+      return;
+    }
 
     const scheduledAtFormatted = form.scheduled_at.replace("T", " ") + ":00";
     const appointmentDateFormatted =
@@ -93,6 +137,7 @@ const AddAppointment = ({ onSuccess }: Props) => {
     await addAppointment({
       user_id: user?.id,
       medical_record_id: medicalRecordId,
+      doctor_id: form.doctor_id,
       scheduled_at: scheduledAtFormatted,
       appointment_date: appointmentDateFormatted,
       status: form.status as "scheduled" | "completed" | "canceled" | "no_show",
@@ -122,11 +167,15 @@ const AddAppointment = ({ onSuccess }: Props) => {
           </Typography>
 
           <Box component="form" onSubmit={handleSubmit}>
+            {/* Pacijent */}
             <Autocomplete
               options={patients}
-              getOptionLabel={(option: any) => option.user?.name ?? ""}
+              getOptionLabel={(option: any) =>
+                option.user?.name ? option.user.name : ""
+              }
               isOptionEqualToValue={(option, value) => option.id === value.id}
               loading={patientsLoading}
+              onInputChange={(_, value) => fetchAllPatients(value)}
               onChange={(_, value) =>
                 setForm({
                   ...form,
@@ -154,15 +203,51 @@ const AddAppointment = ({ onSuccess }: Props) => {
               )}
             />
 
+            {/* Doktor */}
+            <Autocomplete
+              options={doctors}
+              getOptionLabel={(option: any) =>
+                option.user?.name
+                  ? `${option.user.name} (${option.specialization})`
+                  : ""
+              }
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              loading={doctorsLoading}
+              onInputChange={(_, value) => fetchAllDoctors(value)}
+              onChange={(_, value) =>
+                setForm({
+                  ...form,
+                  doctor_id: value ? value.id.toString() : "",
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Doctor"
+                  margin="normal"
+                  required
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {doctorsLoading ? <CircularProgress size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+            />
+
+            {/* Zaključano polje */}
             <TextField
               label="Scheduled At"
               name="scheduled_at"
               type="datetime-local"
               fullWidth
-              required
               margin="normal"
               value={form.scheduled_at}
-              onChange={handleChange}
+              disabled // 👈 korisnik ne može menjati
               InputLabelProps={{ shrink: true }}
             />
 
@@ -216,6 +301,11 @@ const AddAppointment = ({ onSuccess }: Props) => {
             {patientsError && (
               <Alert severity="error" sx={{ mt: 2 }}>
                 {patientsError}
+              </Alert>
+            )}
+            {doctorsError && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {doctorsError}
               </Alert>
             )}
             {error && (
