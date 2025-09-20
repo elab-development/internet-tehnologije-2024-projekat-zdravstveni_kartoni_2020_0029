@@ -62,7 +62,7 @@ class User extends Authenticatable
 
     public function patientProfile()
     {
-        return $this->hasOne(Patient::class, 'user_id');
+        return $this->hasOne(Patient::class, 'user_id','id');
     }
 
     public function nurseProfile()

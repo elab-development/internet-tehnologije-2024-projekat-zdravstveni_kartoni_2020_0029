@@ -35,8 +35,10 @@ Route::middleware("api.response")->group(function () {
         Route::get("/medical-records", [MedicalRecordController::class, "index"]);
         Route::get("/medical-records/{id}", [MedicalRecordController::class, "show"]);
         Route::put("/medical-records/{id}", [MedicalRecordController::class, "update"]);
-        Route::get('/patients/{patientId}/medical-record-id',[MedicalRecordController::class, 'getByPatientId']
-);
+        //Route::get('/patients/{patientId}/medical-record-id',[MedicalRecordController::class, 'getByPatientId']);
+        Route::put('/medical-records/{id}', [MedicalRecordController::class, 'updateMedicalRecord']);
+        Route::get('/medical-records/{id}/my', [MedicalRecordController::class, 'getMyMedicalRecordId']);
+
 
         // Rute za preglede
         Route::post("/examinations", [ExaminationController::class, "store"]);

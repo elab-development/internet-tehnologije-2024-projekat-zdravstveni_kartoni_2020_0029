@@ -83,36 +83,71 @@ class MedicalRecordController extends Controller
     }
 
     // 📌 Pacijent menja lekara
-    public function changeDoctor(Request $request, $id)
-    {
-        $medicalRecord = MedicalRecord::find($id);
+    public function getMyMedicalRecordId()
+        {
         $user = Auth::user();
 
+        // 🧑‍⚕️ Ako je pacijent - ne koristi medicalRecordId već user_id → patientProfile
+        if ($user->isPatient()) {
+            $patient = $user->patientProfile;
+
+            if (!$patient) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Nemate povezan pacijent profil'
+                ], 404);
+            }
+
+            $medicalRecord = MedicalRecord::with(['patient.user','doctor.user','examinations'])
+                ->where('patient_id', $patient->id)
+                ->first();
+
+            if (!$medicalRecord) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Nemate zdravstveni karton'
+                ], 404);
+            }
+
+            // 🔹 Pacijentu vraćamo ceo karton
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $medicalRecord->id
+                ]
+            ]);
+        }
+
+        // 🧑‍⚕️ Doktor / admin traže karton po ID-ju
+        $medicalRecord = MedicalRecord::with(['patient.user','doctor.user','examinations'])
+            ->find($medicalRecordId);
+
         if (!$medicalRecord) {
-            return response()->json(['success' => false, 'message' => 'Karton nije pronađen'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Zdravstveni karton nije pronađen'
+            ], 404);
         }
 
-        if (!$user->isPatient()) {
-            return response()->json(['success' => false, 'message' => 'Samo pacijent može promeniti lekara'], 403);
+        // 🔒 Ako je doktor → provera da li je njegov pacijent
+        if ($user->isDoctor()) {
+            $doctor = $user->doctorProfile;
+            if ($medicalRecord->doctor_id !== optional($doctor)->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Nemate pristup ovom kartonu'
+                ], 403);
+            }
         }
 
-        $patient = $user->patientProfile;
-        if ($medicalRecord->patient_id !== $patient->id) {
-            return response()->json(['success' => false, 'message' => 'Nemate ovlašćenje'], 403);
-        }
-
-        $validated = $request->validate([
-            'doctor_id' => 'required|exists:doctors,id'
-        ]);
-
-        $medicalRecord->update(['doctor_id' => $validated['doctor_id']]);
+        // 🔹 Admin dobija uvek (nema restrikcija)
 
         return response()->json([
             'success' => true,
-            'message' => 'Lekar uspešno promenjen',
-            'data' => $medicalRecord
+            'data' => $medicalRecord->id
         ]);
     }
+
 
     // 📌 Admin ili doktor ažurira karton
     public function updateMedicalRecord(Request $request, $id)
@@ -156,19 +191,6 @@ class MedicalRecordController extends Controller
             'data' => $medicalRecord
         ]);
     }
-
-    // 📌 Vrati ID kartona na osnovu pacijenta
-    public function getByPatientId($patientId)
-    {
-        $medicalRecord = MedicalRecord::where('patient_id', $patientId)->first();
-
-        if (!$medicalRecord) {
-            return response()->json(['success' => false, 'message' => 'Karton ne postoji'], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => ['medical_record_id' => $medicalRecord->id]
-        ]);
-    }
 }
+
+
