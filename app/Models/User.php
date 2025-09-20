@@ -11,9 +11,10 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     public const ROLE = [
-        'ADMIN' => 'admin',
+        'ADMIN'  => 'admin',
         'DOCTOR' => 'doctor',
-        'PATIENT' => 'patient',
+        'PATIENT'=> 'patient',
+        'NURSE'  => 'nurse',
     ];
 
     protected $fillable = [
@@ -32,6 +33,7 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
+    // --- Helpers za role ---
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE['ADMIN'];
@@ -47,13 +49,24 @@ class User extends Authenticatable
         return $this->role === self::ROLE['PATIENT'];
     }
 
+    public function isNurse(): bool
+    {
+        return $this->role === self::ROLE['NURSE'];
+    }
+
+    // --- Relacije ---
     public function doctorProfile()
     {
-        return $this->hasOne(Doctor::class);
+        return $this->hasOne(Doctor::class, 'user_id');
     }
 
     public function patientProfile()
     {
-        return $this->hasOne(Patient::class);
+        return $this->hasOne(Patient::class, 'user_id');
+    }
+
+    public function nurseProfile()
+    {
+        return $this->hasOne(Nurse::class, 'user_id');
     }
 }

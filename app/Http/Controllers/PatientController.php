@@ -55,14 +55,9 @@ class PatientController extends Controller
             ]);
         }
 
-        // NURSE → samo pacijenti vezani za sestru
+        // NURSE → svi pacijenti
         if ($user->isNurse()) {
-            $nurse = $user->nurseProfile;
-
-            $patients = Patient::whereHas('medicalRecord', fn($query) =>
-                    $query->where('nurse_id', $nurse->id)
-                )
-                ->with('user', 'medicalRecord.doctor.user')
+            $patients = Patient::with('user', 'medicalRecord.doctor.user')
                 ->when($search, fn($query) =>
                     $query->whereHas('user', fn($q) =>
                         $q->where('name', 'like', $search . '%')
@@ -95,6 +90,7 @@ class PatientController extends Controller
             'message' => 'Nemate ovlašćenje za pristup listi pacijenata'
         ], 403);
     }
+
 
 
     // 📌 Prikaz pojedinačnog pacijenta

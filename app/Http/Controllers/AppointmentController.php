@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
-use App\Models\Nurse;
 use Illuminate\Http\Request;
 
 class AppointmentController extends Controller
 {
     /**
-     * Vrati termine za doktora, pacijenta, sestru ili sve ako je admin.
+     * Vrati termine po ulozi.
      */
     public function index(Request $request)
     {
@@ -43,35 +42,33 @@ class AppointmentController extends Controller
         }
 
         // restrikcija po ulozi
-        if ($user->role !== 'admin') {
-            if ($user->role === 'doctor' && $user->doctorProfile) {
-                $query->where('doctor_id', $user->doctorProfile->id);
-            } elseif ($user->role === 'nurse' && $user->nurse) {
-                $query->where('nurse_id', $user->nurse->id);
-            } elseif ($user->role === 'patient' && $user->patientProfile) {
-                $query->whereHas('medicalRecord', fn($q) =>
-                    $q->where('patient_id', $user->patientProfile->id)
-                );
+        if ($user->isDoctor()) {
+            $doctorId = optional($user->doctorProfile)->id;
+            if (!$doctorId) {
+                return response()->json(['success' => false, 'message' => 'Doktor nema profil.'], 403);
             }
+            $query->where('doctor_id', $doctorId);
+
+        } elseif ($user->isNurse()) {
+            $nurseId = optional($user->nurseProfile)->id;
+            if (!$nurseId) {
+                return response()->json(['success' => false, 'message' => 'Sestra nema profil.'], 403);
+            }
+            $query->where('nurse_id', $nurseId);
+
+        } elseif ($user->isPatient()) {
+            $patientId = optional($user->patientProfile)->id;
+            if (!$patientId) {
+                return response()->json(['success' => false, 'message' => 'Pacijent nema profil.'], 403);
+            }
+            $query->whereHas('medicalRecord', fn($q) =>
+                $q->where('patient_id', $patientId)
+            );
         }
 
-        $appointments = $query->get()->map(fn($appointment) => [
-            'appointment_id'   => $appointment->id,
-            'patient'          => $appointment->medicalRecord->patient->user->name ?? 'Nepoznat',
-            'doctor'           => $appointment->doctor ? [
-                'id'             => $appointment->doctor->id,
-                'name'           => $appointment->doctor->user->name,
-                'specialization' => $appointment->doctor->specialization,
-            ] : null,
-            'nurse'            => $appointment->nurse ? [
-                'id'      => $appointment->nurse->id,
-                'user_id' => $appointment->nurse->user->id,
-                'name'    => $appointment->nurse->user->name,
-                'email'   => $appointment->nurse->user->email,
-            ] : null,
-            'appointment_date' => $appointment->appointment_date,
-            'status'           => $appointment->status,
-        ]);
+        $appointments = $query->get()->map(fn($appointment) =>
+            $this->formatAppointment($appointment)
+        );
 
         return response()->json(['success' => true, 'data' => $appointments]);
     }
@@ -95,10 +92,11 @@ class AppointmentController extends Controller
             'status'            => 'required|in:scheduled,completed,canceled,no_show',
         ]);
 
-        if ($user->role === 'nurse' && $user->nurse) {
-            $data['nurse_id'] = $user->nurse->id;
-        } elseif ($user->role === 'admin') {
-            $data['nurse_id'] = Nurse::inRandomOrder()->first()?->id;
+        if ($user->isNurse() && $user->nurseProfile) {
+            $data['nurse_id'] = $user->nurseProfile->id;
+        } elseif ($user->isAdmin()) {
+            // admin može da upiše sebe kao nurse_id (vezano za user_id)
+            $data['nurse_id'] = $user->id;
         }
 
         $appointment = Appointment::create($data)->load(['doctor.user', 'nurse.user', 'medicalRecord.patient.user']);
@@ -122,13 +120,13 @@ class AppointmentController extends Controller
         }
 
         $rules = [];
-        if ($user->role === 'doctor' || $user->role === 'admin') {
+        if ($user->isDoctor() || $user->isAdmin()) {
             $rules = [
                 'status'    => 'sometimes|in:scheduled,completed,canceled,no_show',
                 'doctor_id' => 'sometimes|exists:doctors,id',
             ];
-        } elseif ($user->role === 'nurse') {
-            if ($appointment->nurse_id !== $user->nurse->id) {
+        } elseif ($user->isNurse()) {
+            if ($appointment->nurse_id !== optional($user->nurseProfile)->id) {
                 return response()->json(['success' => false, 'message' => 'Nemate dozvolu za izmenu ovog termina.'], 403);
             }
             $rules = [
@@ -153,11 +151,16 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
 
-        if (!$user || $user->role !== 'admin') {
-            return response()->json(['success' => false, 'message' => 'Samo administrator može obrisati termin.'], 403);
+        if (!in_array($user->role, ['admin', 'nurse'])) {
+            return response()->json(['success' => false, 'message' => 'Nemate dozvolu za brisanje termina.'], 403);
         }
 
         $appointment = Appointment::findOrFail($id);
+
+        if ($user->isNurse() && $appointment->nurse_id !== optional($user->nurseProfile)->id) {
+            return response()->json(['success' => false, 'message' => 'Možete brisati samo vaše termine.'], 403);
+        }
+
         $appointment->delete();
 
         return response()->json(['success' => true, 'message' => 'Termin uspešno obrisan.']);
