@@ -16,8 +16,9 @@ import {
   patientMenuItems,
   nurseMenuItems,
 } from "../constants/leftsideitems";
-import { api } from "../auth/api";
+import { useRecords } from "./medicalRecord/hooks/useRecords";
 import { useEffect, useState } from "react";
+import { api } from "../auth/api"; // 👈 treba ti jer povlačiš ceo record
 
 type Props = {
   onSelect: (component: string) => void;
@@ -29,9 +30,13 @@ const LeftSidebar = ({ activeView, onSelect }: Props) => {
   const navigate = useNavigate();
   const { user, logout, loading } = useAuth();
 
+  const { fetchMyRecordId } = useRecords();
   const [patientMedicalRecordId, setPatientMedicalRecordId] = useState<
     number | null
   >(null);
+  const [patientMedicalRecord, setPatientMedicalRecord] = useState<any | null>(
+    null
+  );
   const [fetchingRecord, setFetchingRecord] = useState(false);
 
   const displayName = user?.name?.trim() || "Admin";
@@ -42,15 +47,26 @@ const LeftSidebar = ({ activeView, onSelect }: Props) => {
     .join("")
     .toUpperCase();
 
-  // 🔥 Fetch medical record ID kad se pacijent uloguje
+  // 🔥 Uzimanje medical_record_id + celog recorda kada se pacijent uloguje
   useEffect(() => {
-    const fetchMedicalRecordId = async () => {
+    const loadMyRecord = async () => {
       if (user?.role === "patient") {
         setFetchingRecord(true);
         try {
-          const res = await api.get(`/patients/${user.id}/medical-record-id`);
-          if (res.data.success && res.data.data?.medical_record_id) {
-            setPatientMedicalRecordId(res.data.data.medical_record_id);
+          const recordId = await fetchMyRecordId();
+          if (recordId) {
+            setPatientMedicalRecordId(recordId);
+
+            // 👇 odmah povuci ceo karton
+            const res = await api.get(`/medical-records/${recordId}`);
+            const raw =
+              typeof res.data === "string"
+                ? JSON.parse(res.data.replace(/^\uFEFF/, ""))
+                : res.data;
+
+            if (raw.success && raw.data) {
+              setPatientMedicalRecord(raw.data);
+            }
           }
         } catch (err) {
           console.error("Greška pri učitavanju kartona:", err);
@@ -60,7 +76,7 @@ const LeftSidebar = ({ activeView, onSelect }: Props) => {
       }
     };
 
-    fetchMedicalRecordId();
+    loadMyRecord();
   }, [user]);
 
   const handleLogout = async () => {

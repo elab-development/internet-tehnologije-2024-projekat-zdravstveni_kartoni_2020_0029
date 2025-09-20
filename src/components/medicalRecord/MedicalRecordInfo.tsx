@@ -12,7 +12,7 @@ import {
   Chip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../auth/useAuth"; // 👈 dodato
+import { useAuth } from "../../auth/useAuth";
 
 type Props = {
   record: any;
@@ -30,7 +30,7 @@ const getInitials = (name?: string) => {
 
 const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
   const navigate = useNavigate();
-  const { user } = useAuth(); // 👈 uzimamo ulogovanog korisnika
+  const { user } = useAuth();
 
   if (!record) {
     return (
@@ -42,10 +42,13 @@ const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
     );
   }
 
+  // samo admin i doktor mogu editovati
+  const canEdit = user?.role === "admin" || user?.role === "doctor";
+
   return (
     <Card sx={{ p: 4, borderRadius: 2, boxShadow: 3 }}>
       <CardContent>
-        {/* Naslov i dugmići */}
+        {/* Header */}
         <Box
           sx={{
             display: "flex",
@@ -66,10 +69,8 @@ const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
             </Typography>
           </Typography>
 
-          {/* Dugmići */}
           <Box sx={{ display: "flex", gap: 2 }}>
-            {/* 👇 Edit vidi samo admin i doktor */}
-            {user?.role !== "patient" && (
+            {canEdit && (
               <Button variant="outlined" color="primary" onClick={onEdit}>
                 Edit medical record
               </Button>
@@ -87,9 +88,8 @@ const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
           </Box>
         </Box>
 
-        {/* Ostatak sadržaja */}
+        {/* Pacijent / Doktor */}
         <Grid container columnSpacing={3} columns={{ xs: 4, sm: 8, md: 12 }}>
-          {/* Pacijent */}
           <Grid item xs={12} sm={6}>
             <Stack direction="row" spacing={2} alignItems="center" mb={2}>
               <Avatar sx={{ bgcolor: "primary.main", width: 72, height: 72 }}>
@@ -119,7 +119,6 @@ const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
             </Typography>
           </Grid>
 
-          {/* Doktor */}
           <Grid item xs={12} sm={6}>
             <Stack direction="row" spacing={2} alignItems="center" mb={2}>
               <Avatar sx={{ bgcolor: "secondary.main", width: 72, height: 72 }}>
@@ -169,16 +168,30 @@ const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
 
             <Typography>
               <b>Alergije:</b>{" "}
-              {record.allergies || (
+              {record.allergies && record.allergies.length > 0 ? (
+                Array.isArray(record.allergies) ? (
+                  record.allergies.join(", ")
+                ) : (
+                  record.allergies
+                )
+              ) : (
                 <span style={{ color: "gray" }}>Nema podataka</span>
               )}
             </Typography>
+
             <Typography>
               <b>Hronične bolesti:</b>{" "}
-              {record.chronic_diseases || (
+              {record.chronic_diseases && record.chronic_diseases.length > 0 ? (
+                Array.isArray(record.chronic_diseases) ? (
+                  record.chronic_diseases.join(", ")
+                ) : (
+                  record.chronic_diseases
+                )
+              ) : (
                 <span style={{ color: "gray" }}>Nema podataka</span>
               )}
             </Typography>
+
             <Typography>
               <b>Otvoren:</b> {record.opening_date}
             </Typography>

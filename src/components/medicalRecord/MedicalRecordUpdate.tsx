@@ -11,7 +11,7 @@ import {
   DialogActions,
 } from "@mui/material";
 import MuiAlert, { AlertProps } from "@mui/material/Alert";
-import { api } from "../../auth/api";
+import { useRecords } from "./hooks/useRecords"; // 👈 nova kuka
 
 const CustomAlert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
   props,
@@ -28,7 +28,7 @@ type Props = {
   onSuccess: () => void;
 };
 
-const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-"];
+const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const allergies = ["Penicilin", "Prašina", "Polen", "Latex", "Jaja", "Mleko"];
 const diseases = [
   "Hipertenzija",
@@ -45,37 +45,40 @@ const MedicalRecordUpdate: React.FC<Props> = ({
   patientId,
   onSuccess,
 }) => {
+  const { updateRecord, fetchRecord, successMsg, error, loading } =
+    useRecords();
+
   const [formData, setFormData] = useState({
     blood_type: "",
-    allergies: "",
-    chronic_diseases: "",
+    allergies: [] as string[],
+    chronic_diseases: [] as string[],
     notes: "",
   });
 
-  const [updating, setUpdating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [showSnackbar, setShowSnackbar] = useState(false);
 
+  // kada se otvori dijalog, popuni formu
   useEffect(() => {
     if (record) {
       setFormData({
         blood_type: record?.blood_type || "",
-        allergies: record?.allergies || "",
-        chronic_diseases: record?.chronic_diseases || "",
+        allergies: record?.allergies || [],
+        chronic_diseases: record?.chronic_diseases || [],
         notes: record?.notes || "",
       });
     } else {
       setFormData({
         blood_type: "",
-        allergies: "",
-        chronic_diseases: "",
+        allergies: [],
+        chronic_diseases: [],
         notes: "",
       });
     }
   }, [record, open]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -83,40 +86,32 @@ const MedicalRecordUpdate: React.FC<Props> = ({
     }));
   };
 
-  const handleSubmit = async () => {
-    setUpdating(true);
-    setError(null);
-    setSuccess(null);
+  const handleMultiSelectChange = (name: string, values: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: values,
+    }));
+  };
 
-    try {
-      if (record) {
-        await api.put(`/medical-records/patients${record.id}`, {
-          ...record, // ostavi stare vrednosti
-          ...formData, // zameni novima
-        });
-        setSuccess("Zdravstveni karton je uspešno izmenjen ✅");
-      } else {
-        await api.post(`/medical-records`, {
-          patient_id: patientId,
-          ...formData,
-        });
-        setSuccess("Zdravstveni karton je uspešno kreiran ✅");
-      }
-      setShowSnackbar(true);
-    } catch {
-      setError("Greška prilikom izmene/kreiranja kartona");
-    } finally {
-      setUpdating(false);
+  const handleSubmit = async () => {
+    if (record) {
+      // update postojećeg kartona
+      await updateRecord(record.id, formData);
+    } else {
+      // ako želiš da admin/doktor može kreirati karton ručno → backend route POST treba da postoji
+      console.warn("❗ Kreiranje kartona ide kroz /patients store logiku");
+    }
+
+    setShowSnackbar(true);
+    onSuccess();
+    if (record) {
+      // ponovo učitaj karton
+      fetchRecord(record.id);
     }
   };
 
-  const handleSnackbarClose = (
-    event?: React.SyntheticEvent | Event,
-    reason?: string
-  ) => {
-    if (reason === "clickaway") return;
+  const handleSnackbarClose = () => {
     setShowSnackbar(false);
-    onSuccess();
   };
 
   return (
@@ -138,16 +133,6 @@ const MedicalRecordUpdate: React.FC<Props> = ({
           value={formData.blood_type}
           onChange={handleChange}
           margin="normal"
-          SelectProps={{
-            renderValue: (selected) =>
-              selected !== "" ? (
-                selected
-              ) : (
-                <span style={{ color: "#888" }}>
-                  {record?.blood_type || "Odaberi krvnu grupu"}
-                </span>
-              ),
-          }}
         >
           {bloodTypes.map((type) => (
             <MenuItem key={type} value={type}>
@@ -162,19 +147,13 @@ const MedicalRecordUpdate: React.FC<Props> = ({
           label="Alergije"
           name="allergies"
           fullWidth
-          value={formData.allergies}
-          onChange={handleChange}
-          margin="normal"
           SelectProps={{
-            renderValue: (selected) =>
-              selected !== "" ? (
-                selected
-              ) : (
-                <span style={{ color: "#888" }}>
-                  {record?.allergies || "Odaberi alergiju"}
-                </span>
-              ),
+            multiple: true,
+            value: formData.allergies,
+            onChange: (e) =>
+              handleMultiSelectChange("allergies", e.target.value as string[]),
           }}
+          margin="normal"
         >
           {allergies.map((a) => (
             <MenuItem key={a} value={a}>
@@ -189,19 +168,16 @@ const MedicalRecordUpdate: React.FC<Props> = ({
           label="Hronične bolesti"
           name="chronic_diseases"
           fullWidth
-          value={formData.chronic_diseases}
-          onChange={handleChange}
-          margin="normal"
           SelectProps={{
-            renderValue: (selected) =>
-              selected !== "" ? (
-                selected
-              ) : (
-                <span style={{ color: "#888" }}>
-                  {record?.chronic_diseases || "Odaberi bolest"}
-                </span>
+            multiple: true,
+            value: formData.chronic_diseases,
+            onChange: (e) =>
+              handleMultiSelectChange(
+                "chronic_diseases",
+                e.target.value as string[]
               ),
           }}
+          margin="normal"
         >
           {diseases.map((d) => (
             <MenuItem key={d} value={d}>
@@ -220,7 +196,6 @@ const MedicalRecordUpdate: React.FC<Props> = ({
           value={formData.notes}
           onChange={handleChange}
           margin="normal"
-          placeholder={record?.notes || "Unesi napomene"}
         />
       </DialogContent>
 
@@ -229,17 +204,17 @@ const MedicalRecordUpdate: React.FC<Props> = ({
           variant="contained"
           color="primary"
           onClick={handleSubmit}
-          disabled={updating}
+          disabled={loading}
         >
           {record ? "Sačuvaj izmene" : "Kreiraj"}
         </Button>
-        <Button variant="outlined" onClick={onClose} disabled={updating}>
+        <Button variant="outlined" onClick={onClose} disabled={loading}>
           Otkaži
         </Button>
       </DialogActions>
 
       <Snackbar
-        open={showSnackbar}
+        open={showSnackbar && !!successMsg}
         autoHideDuration={3000}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
@@ -249,7 +224,7 @@ const MedicalRecordUpdate: React.FC<Props> = ({
           severity="success"
           sx={{ width: "100%" }}
         >
-          {success}
+          {successMsg}
         </CustomAlert>
       </Snackbar>
     </Dialog>
