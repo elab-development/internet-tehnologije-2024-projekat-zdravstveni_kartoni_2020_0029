@@ -9,7 +9,7 @@ import Patients from "../components/patient/PatientsInfo";
 import AddPatient from "../components/patient/addPatient";
 import Doctors from "../components/doctors/DoctorsInfo";
 import AddDoctor from "../components/doctors/addDoctor";
-import AppoitmentInfo from "../components/appointments/AppoitmentsInfo";
+import AppoitmentInfo from "../components/appointments/AppointmentsInfo";
 import AddAppointment from "../components/appointments/AddAppointment";
 
 function App() {

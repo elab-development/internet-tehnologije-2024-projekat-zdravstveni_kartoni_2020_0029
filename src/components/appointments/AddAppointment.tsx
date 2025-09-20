@@ -22,7 +22,6 @@ type Props = {
 
 const statusOptions = ["scheduled", "completed", "canceled", "no_show"];
 
-// Helper: vrati string u formatu "YYYY-MM-DDTHH:mm"
 const getTodayDateTime = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -55,7 +54,13 @@ const AddAppointment = ({ onSuccess }: Props) => {
     status: "scheduled",
   });
 
-  // Fetch pacijenata
+  // Ako nije admin ili nurse → nema pristup formi
+  useEffect(() => {
+    if (user && user.role !== "admin" && user.role !== "nurse") {
+      navigate("/appointments");
+    }
+  }, [user, navigate]);
+
   const fetchAllPatients = async (search = "") => {
     setPatientsLoading(true);
     setPatientsError(null);
@@ -79,7 +84,6 @@ const AddAppointment = ({ onSuccess }: Props) => {
     }
   };
 
-  // Fetch doktora
   const fetchAllDoctors = async (search = "") => {
     setDoctorsLoading(true);
     setDoctorsError(null);
@@ -134,7 +138,7 @@ const AddAppointment = ({ onSuccess }: Props) => {
       return;
     }
 
-    // ✨ Novi payload po kontroleru
+    // ✨ Backend sam postavlja nurse_id (admin → user_id, nurse → nurse_id)
     const payload: any = {
       medical_record_id: medicalRecordId,
       doctor_id: form.doctor_id,
@@ -142,11 +146,6 @@ const AddAppointment = ({ onSuccess }: Props) => {
       appointment_date: appointmentDateFormatted,
       status: form.status as "scheduled" | "completed" | "canceled" | "no_show",
     };
-
-    // Sestra mora imati nurse_id = njen profil
-    if (user?.role === "nurse") {
-      payload.nurse_id = user.nurse?.id;
-    }
 
     await addAppointment(payload);
 
@@ -271,20 +270,16 @@ const AddAppointment = ({ onSuccess }: Props) => {
             />
 
             <TextField
-              select
               label="Status"
               name="status"
-              value={form.status}
-              onChange={handleChange}
+              value="scheduled"
               fullWidth
               margin="normal"
-            >
-              {statusOptions.map((status) => (
-                <MenuItem key={status} value={status}>
-                  {status}
-                </MenuItem>
-              ))}
-            </TextField>
+              disabled
+              InputProps={{
+                readOnly: true,
+              }}
+            />
 
             <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
               <Button

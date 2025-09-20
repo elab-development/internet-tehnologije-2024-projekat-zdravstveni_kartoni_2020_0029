@@ -56,28 +56,7 @@ export const useAppointment = () => {
       }
 
       if (raw.success && Array.isArray(raw.data)) {
-        const mapped: AppointmentRecord[] = raw.data.map((a: any) => ({
-          appointment_id: a.appointment_id,
-          patient: a.patient,
-          appointment_date: a.appointment_date,
-          status: a.status,
-          doctor: a.doctor
-            ? {
-                id: a.doctor.id,
-                name: a.doctor.name,
-                specialization: a.doctor.specialization,
-              }
-            : null,
-          nurse: a.nurse
-            ? {
-                id: a.nurse.id,
-                user_id: a.nurse.user_id,
-                name: a.nurse.name,
-                email: a.nurse.email,
-              }
-            : null,
-        }));
-        setAppointments(mapped);
+        setAppointments(raw.data);
       } else {
         setError("Nepoznat format odgovora sa servera");
       }

@@ -9,7 +9,7 @@ import Patients from "./components/patient/PatientsInfo";
 import AddPatient from "./components/patient/addPatient";
 import Doctors from "./components/doctors/DoctorsInfo";
 import AddDoctor from "./components/doctors/addDoctor";
-import AppoitmentInfo from "./components/appointments/AppoitmentsInfo";
+import AppoitmentInfo from "./components/appointments/AppointmentsInfo";
 import AddAppointment from "./components/appointments/AddAppointment";
 import Layout from "./components/layout/Layout";
 import RegisterAsPatient from "./components/patient/RegisterAsPatient";
@@ -66,6 +66,9 @@ function App(): React.ReactElement {
           path="/patients/medical-record/:patientId"
           element={<MedicalRecordPage />}
         />
+
+        <Route path="/medical-records" element={<MedicalRecordPage />} />
+
         <Route
           path="/medical-records/:medicalRecordId/examinations"
           element={<ExaminationInfo />}

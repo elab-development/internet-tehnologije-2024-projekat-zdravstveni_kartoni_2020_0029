@@ -6,29 +6,26 @@ import {
   MenuItem,
   Button,
   Typography,
-  Tooltip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 type AppointmentFiltersProps = {
-  search: string;
-  setSearch: (val: string) => void;
-  status: string;
-  setStatus: (val: string) => void;
+  patientSearch: string;
+  setPatientSearch: (val: string) => void;
+  statusFilter: string;
+  setStatusFilter: (val: string) => void;
   user: { role?: string } | null;
 };
 
 const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
-  search,
-  setSearch,
-  status,
-  setStatus,
+  patientSearch,
+  setPatientSearch,
+  statusFilter,
+  setStatusFilter,
   user,
 }) => {
   const statusOptions = ["scheduled", "completed", "canceled", "no_show"];
   const navigate = useNavigate();
-
-  const canCreate = user?.role === "admin" || user?.role === "nurse";
 
   return (
     <Box
@@ -47,16 +44,16 @@ const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
         <TextField
           size="small"
           placeholder="Search patients..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={patientSearch}
+          onChange={(e) => setPatientSearch(e.target.value)}
         />
 
         {/* Filtriranje po statusu */}
         <Select
           size="small"
           displayEmpty
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
         >
           <MenuItem value="">All statuses</MenuItem>
           {statusOptions.map((s) => (
@@ -66,22 +63,14 @@ const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
           ))}
         </Select>
 
-        {/* Dugme za dodavanje termina */}
-        {canCreate ? (
+        {/* Dugme za dodavanje termina → samo admin i nurse */}
+        {(user?.role === "admin" || user?.role === "nurse") && (
           <Button
             variant="contained"
             onClick={() => navigate("/appointments/addAppointment")}
           >
-            New Appointment
+            New Appoitment
           </Button>
-        ) : (
-          <Tooltip title="Samo administrator i sestra mogu da kreiraju termine">
-            <span>
-              <Button variant="contained" disabled>
-                New Appointment
-              </Button>
-            </span>
-          </Tooltip>
         )}
       </Box>
     </Box>
