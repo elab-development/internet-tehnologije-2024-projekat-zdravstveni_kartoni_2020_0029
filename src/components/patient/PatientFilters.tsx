@@ -43,12 +43,12 @@ const PatientFilters: React.FC<PatientFiltersProps> = ({
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <TextField
+        {/* <TextField
           size="small"
           placeholder="Search by doctor..."
           value={doctorSearch}
           onChange={(e) => setDoctorSearch(e.target.value)}
-        />
+        /> */}
 
         {(user?.role === "admin" || user?.role === "doctor") && (
           <Button

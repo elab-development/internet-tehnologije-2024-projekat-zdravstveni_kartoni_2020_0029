@@ -51,7 +51,8 @@ export const useRecords = () => {
     setSuccessMsg(null);
 
     try {
-      const res = await api.put(`/medical-records/${id}`, data);
+      // 👇 sad puca na novu backend metodu
+      const res = await api.put(`/medical-records/${id}/update`, data);
 
       const raw =
         typeof res.data === "string"

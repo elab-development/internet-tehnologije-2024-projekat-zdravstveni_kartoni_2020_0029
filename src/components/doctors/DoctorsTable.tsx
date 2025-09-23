@@ -29,7 +29,11 @@ type DoctorsTableProps = {
   onEdit: (doctor: BackendDoctor) => void;
 };
 
-const DoctorsTable: React.FC<DoctorsTableProps> = ({ doctors, onDelete, onEdit }) => (
+const DoctorsTable: React.FC<DoctorsTableProps> = ({
+  doctors,
+  onDelete,
+  onEdit,
+}) => (
   <TableContainer component={Paper}>
     <Table>
       <TableHead>
@@ -64,5 +68,3 @@ const DoctorsTable: React.FC<DoctorsTableProps> = ({ doctors, onDelete, onEdit }
 );
 
 export default DoctorsTable;
-
-

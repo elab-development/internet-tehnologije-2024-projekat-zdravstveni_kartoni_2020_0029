@@ -9,8 +9,11 @@ import {
 import { useAppointment } from "./hooks/useAppointment";
 import { useAuth } from "../../auth/useAuth";
 import Layout from "../layout/Layout";
-import AppointmentTable from "./AppointmentTable";
+// import AppointmentTable from "./AppointmentTable"; // ❌ uklonili smo tabelu
+import AppointmentCalendar from "./AppointmentCalendar"; // ✅ novi kalendar
 import AppointmentFilters from "./AppointmentFilter";
+import PageWrapper from "../PageWrapper";
+import { useNavigate } from "react-router-dom";
 
 type Props = {
   onAddAppointment: () => void;
@@ -18,6 +21,7 @@ type Props = {
 
 const AppointmentInfo = ({ onAddAppointment }: Props) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const {
     appointments: records,
@@ -39,10 +43,13 @@ const AppointmentInfo = ({ onAddAppointment }: Props) => {
 
   const breadcrumbs = [{ label: "Appointments", view: "appointments" }];
 
+  const handleSelectRecord = (recordId: number) => {
+    navigate(`/patients/medical-record/${recordId}`);
+  };
+
   return (
     <Layout crumbs1={breadcrumbs}>
-      <Box sx={{ p: 3 }}>
-        {/* 🔎 Filteri */}
+      <Box sx={{ p: 1 }}>
         <AppointmentFilters
           patientSearch={patientSearch}
           setPatientSearch={setPatientSearch}
@@ -51,21 +58,18 @@ const AppointmentInfo = ({ onAddAppointment }: Props) => {
           user={user}
         />
 
-        {/* Loader */}
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
             <CircularProgress />
           </Box>
         )}
 
-        {/* Error */}
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
 
-        {/* Success msg */}
         {successMsg && (
           <Snackbar
             open={!!successMsg}
@@ -74,14 +78,16 @@ const AppointmentInfo = ({ onAddAppointment }: Props) => {
           />
         )}
 
-        {/* 📋 Tabela */}
         {!loading && records.length > 0 && (
-          <AppointmentTable
-            records={records}
-            user={user}
-            updateAppointment={updateAppointment}
-            deleteAppointment={deleteAppointment}
-          />
+          <PageWrapper>
+            <AppointmentCalendar
+              records={records}
+              user={user}
+              updateAppointment={updateAppointment}
+              deleteAppointment={deleteAppointment}
+              onSelectRecord={handleSelectRecord}
+            />
+          </PageWrapper>
         )}
 
         {!loading && records.length === 0 && (

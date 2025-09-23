@@ -5,6 +5,7 @@ import { useExaminations } from "./hooks/useExaminations";
 import ExaminationsTable from "./ExaminationsTable";
 import Layout from "../layout/Layout";
 import { useAuth } from "../../auth/useAuth";
+import PageWrapper from "../PageWrapper";
 
 const ExaminationInfo: React.FC = () => {
   const { medicalRecordId } = useParams<{ medicalRecordId?: string }>();
@@ -56,7 +57,7 @@ const ExaminationInfo: React.FC = () => {
 
   return (
     <Layout crumbs1={breadcrumbs}>
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: 1 }}>
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
             <CircularProgress />
@@ -76,19 +77,21 @@ const ExaminationInfo: React.FC = () => {
         )}
 
         {!loading && !error && (
-          <ExaminationsTable
-            examinations={examinations}
-            loading={loading}
-            error={error}
-            successMsg={successMsg}
-            page={page}
-            setPage={setPage}
-            totalPages={totalPages}
-            onUpdate={updateExamination}
-            onDelete={deleteExamination}
-            medicalRecordId={medicalRecordId}
-            userRole={user?.role}
-          />
+          <PageWrapper>
+            <ExaminationsTable
+              examinations={examinations}
+              loading={loading}
+              error={error}
+              successMsg={successMsg}
+              page={page}
+              setPage={setPage}
+              totalPages={totalPages}
+              onUpdate={updateExamination}
+              onDelete={deleteExamination}
+              medicalRecordId={medicalRecordId}
+              userRole={user?.role}
+            />
+          </PageWrapper>
         )}
       </Box>
     </Layout>

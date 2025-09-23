@@ -12,6 +12,9 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../auth/useAuth";
 
+// ✅ Importuj logo
+import doctorLogo from "../assets/doctor_logo.png";
+
 export default function LoginForm() {
   const [email, setEmail] = useState("admin@klinika.rs");
   const [password, setPassword] = useState("");
@@ -25,7 +28,7 @@ export default function LoginForm() {
 
     try {
       await loginWithCredentials(email, password);
-      // ✅ Redirect sada radi samo AuthProvider (preko response.redirect_to)
+      // ✅ Redirect radi preko AuthProvider-a
     } catch (err: any) {
       setError(err.message || "Došlo je do greške pri prijavi");
     }
@@ -41,18 +44,33 @@ export default function LoginForm() {
       justifyContent="center"
       alignItems="center"
     >
-      <Paper elevation={3} sx={{ p: 4, width: 350 }}>
-        <Typography
+      <Paper
+        elevation={4}
+        sx={{
+          p: 4,
+          width: 450, // 👈 širi pravougaonik
+          borderRadius: 3,
+        }}
+      >
+        {/* <Typography
           variant="h4"
           component="h1"
           sx={{
             fontWeight: 600,
             textAlign: "center",
-            mb: 2,
+            mb: 3,
           }}
         >
           Login
-        </Typography>
+        </Typography> */}
+        {/* LOGO */}
+        <Box display="flex" justifyContent="center" mb={2}>
+          <img
+            src={doctorLogo}
+            alt="Doctor Logo"
+            style={{ width: "300px", height: "300px" }}
+          />
+        </Box>
 
         {error && (
           <Alert
@@ -101,7 +119,7 @@ export default function LoginForm() {
 
           <Box sx={{ textAlign: "center", mt: 1 }}>
             <MuiLink
-              onClick={() => navigate("/register/asPatient")} // 👈 izmenjeno
+              onClick={() => navigate("/register/asPatient")}
               sx={{
                 cursor: "pointer",
                 textDecoration: "none",

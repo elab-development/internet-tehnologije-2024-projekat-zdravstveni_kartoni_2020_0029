@@ -48,7 +48,7 @@ export const useExaminations = (medicalRecordId: number | null = null) => {
     try {
       const endpoint = medicalRecordId
         ? `/medical-records/${medicalRecordId}/examinations?page=${page}&per_page=10`
-        : `/examinations?page=${page}&per_page=10`;
+        : `/examinations?page=${page}&per_page=8`;
 
       const res = await api.get(endpoint);
 

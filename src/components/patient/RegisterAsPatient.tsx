@@ -24,12 +24,24 @@ const RegisterAsPatient: React.FC = () => {
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     jmbg: "",
     date_of_birth: "",
     gender: "",
     blood_type: "",
-    doctor_id: "", // može biti prazan string dok se ne izabere
+    doctor_id: "",
   });
+
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  // ✅ Validacija u realnom vremenu
+  useEffect(() => {
+    if (form.confirmPassword && form.password !== form.confirmPassword) {
+      setPasswordError("Passwords do not match");
+    } else {
+      setPasswordError(null);
+    }
+  }, [form.password, form.confirmPassword]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -38,7 +50,8 @@ const RegisterAsPatient: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 👇 payload usklađen sa API-jem
+    if (passwordError) return; // stop ako ne poklapa confirm password
+
     const payload = {
       name: form.name,
       email: form.email,
@@ -54,7 +67,6 @@ const RegisterAsPatient: React.FC = () => {
     await registerPatient(payload);
   };
 
-  // ⏳ Redirect ako je uspešno registrovan
   useEffect(() => {
     if (successMsg) {
       const timer = setTimeout(() => {
@@ -78,7 +90,6 @@ const RegisterAsPatient: React.FC = () => {
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit}>
-          {/* Name */}
           <TextField
             fullWidth
             required
@@ -89,7 +100,6 @@ const RegisterAsPatient: React.FC = () => {
             onChange={handleChange}
           />
 
-          {/* Email */}
           <TextField
             fullWidth
             required
@@ -101,7 +111,6 @@ const RegisterAsPatient: React.FC = () => {
             onChange={handleChange}
           />
 
-          {/* Password */}
           <TextField
             fullWidth
             required
@@ -114,7 +123,20 @@ const RegisterAsPatient: React.FC = () => {
             inputProps={{ minLength: 8 }}
           />
 
-          {/* JMBG */}
+          {/* ✅ Confirm Password */}
+          <TextField
+            fullWidth
+            required
+            type="password"
+            label="Confirm Password"
+            name="confirmPassword"
+            margin="normal"
+            value={form.confirmPassword}
+            onChange={handleChange}
+            error={!!passwordError}
+            helperText={passwordError}
+          />
+
           <TextField
             fullWidth
             required
@@ -126,7 +148,6 @@ const RegisterAsPatient: React.FC = () => {
             inputProps={{ maxLength: 13, minLength: 13 }}
           />
 
-          {/* Date of Birth */}
           <TextField
             fullWidth
             required
@@ -139,7 +160,6 @@ const RegisterAsPatient: React.FC = () => {
             onChange={handleChange}
           />
 
-          {/* Gender */}
           <TextField
             select
             required
@@ -155,7 +175,6 @@ const RegisterAsPatient: React.FC = () => {
             <MenuItem value="other">Other</MenuItem>
           </TextField>
 
-          {/* Doctor combobox */}
           <Autocomplete
             options={doctors}
             getOptionLabel={(option: any) =>
@@ -166,7 +185,6 @@ const RegisterAsPatient: React.FC = () => {
             onInputChange={(_, value) => setSearch(value)}
             onChange={(_, value) => {
               const id = value ? value.id : "";
-              console.log("Selektovan doktor:", id);
               setForm({ ...form, doctor_id: id });
             }}
             renderInput={(params) => (
@@ -179,7 +197,6 @@ const RegisterAsPatient: React.FC = () => {
             )}
           />
 
-          {/* Blood type */}
           <TextField
             select
             fullWidth
@@ -187,17 +204,7 @@ const RegisterAsPatient: React.FC = () => {
             name="blood_type"
             margin="normal"
             value={form.blood_type}
-            onChange={(e) => {
-              const newValue = e.target.value;
-              console.log(
-                "Promena krvne grupe:",
-                "stara =",
-                form.blood_type,
-                "→ nova =",
-                newValue
-              );
-              handleChange(e); // sada ispravno prosleđuje
-            }}
+            onChange={handleChange}
           >
             <MenuItem value="">(none)</MenuItem>
             {bloodTypes.map((bt) => (
@@ -207,13 +214,12 @@ const RegisterAsPatient: React.FC = () => {
             ))}
           </TextField>
 
-          {/* Dugmići */}
           <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
             <Button
               type="submit"
               variant="contained"
               fullWidth
-              disabled={loading}
+              disabled={loading || !!passwordError}
             >
               {loading ? "Saving..." : "Register"}
             </Button>
@@ -227,7 +233,6 @@ const RegisterAsPatient: React.FC = () => {
             </Button>
           </Box>
 
-          {/* Error & Success */}
           {error && (
             <Alert severity="error" sx={{ mt: 2 }}>
               <ul>

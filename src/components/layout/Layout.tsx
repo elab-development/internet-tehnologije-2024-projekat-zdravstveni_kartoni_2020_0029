@@ -85,7 +85,7 @@ const Layout: React.FC<{
     <Box sx={{ display: "flex", height: "100vh" }}>
       <LeftSidebar onSelect={navigateTo} activeView={activeView ?? ""} />
       <Box sx={{ flexGrow: 1, p: 4 }}>
-        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2, ml: 6 }}>
           {breadcrumbs.map((crumb, idx) =>
             idx === breadcrumbs.length - 1 ? (
               <Typography key={idx} color="text.primary" fontWeight="bold">

@@ -2,13 +2,14 @@ import {
   Box,
   Typography,
   Avatar,
-  Paper,
   Divider,
   Button,
   Stack,
   CircularProgress,
+  IconButton,
+  Drawer,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import {
   adminMenuItems,
@@ -18,26 +19,25 @@ import {
 } from "../constants/leftsideitems";
 import { useRecords } from "./medicalRecord/hooks/useRecords";
 import { useEffect, useState } from "react";
-import { api } from "../auth/api"; // 👈 treba ti jer povlačiš ceo record
+import { api } from "../auth/api";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
 
 type Props = {
-  onSelect: (component: string) => void;
   activeView: string;
-  onFetchAppointments?: () => void;
+  onSelect: (component: string) => void;
 };
 
 const LeftSidebar = ({ activeView, onSelect }: Props) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout, loading } = useAuth();
 
   const { fetchMyRecordId } = useRecords();
   const [patientMedicalRecordId, setPatientMedicalRecordId] = useState<
     number | null
   >(null);
-  const [patientMedicalRecord, setPatientMedicalRecord] = useState<any | null>(
-    null
-  );
-  const [fetchingRecord, setFetchingRecord] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const displayName = user?.name?.trim() || "Admin";
   const displayEmail = user?.email || "—";
@@ -47,35 +47,20 @@ const LeftSidebar = ({ activeView, onSelect }: Props) => {
     .join("")
     .toUpperCase();
 
-  // 🔥 Uzimanje medical_record_id + celog recorda kada se pacijent uloguje
   useEffect(() => {
     const loadMyRecord = async () => {
       if (user?.role === "patient") {
-        setFetchingRecord(true);
         try {
           const recordId = await fetchMyRecordId();
           if (recordId) {
             setPatientMedicalRecordId(recordId);
-
-            // 👇 odmah povuci ceo karton
-            const res = await api.get(`/medical-records/${recordId}`);
-            const raw =
-              typeof res.data === "string"
-                ? JSON.parse(res.data.replace(/^\uFEFF/, ""))
-                : res.data;
-
-            if (raw.success && raw.data) {
-              setPatientMedicalRecord(raw.data);
-            }
+            await api.get(`/medical-records/${recordId}`);
           }
         } catch (err) {
           console.error("Greška pri učitavanju kartona:", err);
-        } finally {
-          setFetchingRecord(false);
         }
       }
     };
-
     loadMyRecord();
   }, [user]);
 
@@ -88,7 +73,6 @@ const LeftSidebar = ({ activeView, onSelect }: Props) => {
     }
   };
 
-  // 👮 Meniji po ulozi
   const menuItems =
     user?.role === "admin"
       ? adminMenuItems
@@ -99,101 +83,121 @@ const LeftSidebar = ({ activeView, onSelect }: Props) => {
       : nurseMenuItems;
 
   return (
-    <Paper
-      elevation={3}
-      sx={{
-        width: 300,
-        p: 3,
-        display: "flex",
-        flexDirection: "column",
-        borderRadius: 0,
-        height: "100vh",
-        boxSizing: "border-box",
-        overflow: "hidden",
-        userSelect: "none",
-      }}
-    >
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <Typography variant="h6">Medical Portal</Typography>
-      </Box>
-
-      {/* User Info */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
-        <Avatar
+    <>
+      {/* Hamburger dugme */}
+      {!open && (
+        <IconButton
+          onClick={() => setOpen(true)}
           sx={{
-            width: 120,
-            height: 120,
-            bgcolor: "primary.main",
-            fontSize: "3rem",
-            mb: 2,
+            position: "fixed",
+            top: 16,
+            left: 16,
+            zIndex: 1300,
+            bgcolor: "white",
+            boxShadow: 2,
           }}
         >
-          {initials}
-        </Avatar>
-
-        <Typography variant="h6" component="h2">
-          {displayName}
-        </Typography>
-
-        <Typography variant="subtitle2" color="text.secondary">
-          {displayEmail}
-        </Typography>
-
-        <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
-          {user?.role || "—"}
-        </Typography>
-      </Box>
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* Menu */}
-      {user?.role === "patient" && fetchingRecord ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-          <CircularProgress size={24} />
-        </Box>
-      ) : (
-        <Stack spacing={1} sx={{ mb: 3 }}>
-          {menuItems?.map((x) => {
-            const finalLink =
-              user?.role === "patient" && patientMedicalRecordId
-                ? x.link.replace(":id", String(patientMedicalRecordId))
-                : x.link;
-
-            return (
-              <Button
-                key={finalLink}
-                fullWidth
-                variant={activeView === finalLink ? "contained" : "outlined"}
-                onClick={() => onSelect(finalLink)}
-                sx={{ justifyContent: "flex-start" }}
-              >
-                {x.label}
-              </Button>
-            );
-          })}
-        </Stack>
+          <MenuIcon />
+        </IconButton>
       )}
 
-      {/* Logout */}
-      <Box sx={{ mt: "auto" }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          onClick={handleLogout}
-          disabled={loading}
+      <Drawer anchor="left" open={open} onClose={() => setOpen(false)}>
+        <Box
+          sx={{
+            width: 280,
+            p: 3,
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+          }}
         >
-          {loading ? "Odjavljivanje..." : "Log out"}
-        </Button>
-      </Box>
-    </Paper>
+          {/* Header */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+            <Typography variant="h6">Medical Portal</Typography>
+            <IconButton onClick={() => setOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          {/* User Info */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Avatar
+              sx={{
+                width: 100,
+                height: 100,
+                bgcolor: "primary.main",
+                fontSize: "2rem",
+                mb: 1,
+              }}
+            >
+              {initials}
+            </Avatar>
+            <Typography variant="h6">{displayName}</Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              {displayEmail}
+            </Typography>
+            <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
+              {user?.role || "—"}
+            </Typography>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Menu */}
+          <Stack spacing={1} sx={{ mb: 3 }}>
+            {menuItems?.map((x) => {
+              const finalLink =
+                user?.role === "patient" && patientMedicalRecordId
+                  ? x.link.replace(":id", String(patientMedicalRecordId))
+                  : x.link;
+
+              const isActive =
+                location.pathname.startsWith(finalLink) ||
+                activeView === finalLink;
+
+              return (
+                <Button
+                  key={finalLink}
+                  fullWidth
+                  variant={isActive ? "contained" : "outlined"}
+                  color={isActive ? "primary" : "inherit"}
+                  onClick={() => {
+                    onSelect(finalLink);
+                    navigate(finalLink);
+                    setOpen(false); // 👈 zatvori Drawer kad klikneš na item
+                  }}
+                  sx={{
+                    justifyContent: "flex-start",
+                    fontWeight: isActive ? "bold" : "normal",
+                  }}
+                >
+                  {x.label}
+                </Button>
+              );
+            })}
+          </Stack>
+
+          {/* Logout */}
+          <Box sx={{ mt: "auto" }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={handleLogout}
+              disabled={loading}
+            >
+              {loading ? "Odjavljivanje..." : "Log out"}
+            </Button>
+          </Box>
+        </Box>
+      </Drawer>
+    </>
   );
 };
 

@@ -13,6 +13,7 @@ import DoctorsTable from "./DoctorsTable";
 import DeleteDoctorDialog from "./DeleteDoctorDialog";
 import DoctorUpdate from "./DoctorUpdate";
 import Layout from "../layout/Layout";
+import PageWrapper from "../PageWrapper";
 
 const Doctors = ({ onAddDoctor }: { onAddDoctor: () => void }) => {
   const { user } = useAuth();
@@ -84,13 +85,13 @@ const Doctors = ({ onAddDoctor }: { onAddDoctor: () => void }) => {
           onAddDoctor={onAddDoctor}
           user={user}
         />
-
-        <DoctorsTable
-          doctors={doctors}
-          onDelete={handleDeleteClick}
-          onEdit={handleEditClick}
-        />
-
+        <PageWrapper>
+          <DoctorsTable
+            doctors={doctors}
+            onDelete={handleDeleteClick}
+            onEdit={handleEditClick}
+          />
+        </PageWrapper>
         {totalPages > 1 && (
           <Box display="flex" justifyContent="center" mt={3}>
             <Pagination

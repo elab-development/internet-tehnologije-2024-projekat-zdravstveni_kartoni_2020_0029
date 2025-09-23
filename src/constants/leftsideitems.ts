@@ -4,6 +4,7 @@ export const adminMenuItems = [
   { link: "/appointments", label: "Appointments" },
   { link: "/examinations", label: "Examinations" },
   { link: "/nurses", label: "Nurses" },
+  { link: "/corona-report", label: "Covid19 report" },
 ];
 
 export const patientMenuItems = [
@@ -12,9 +13,10 @@ export const patientMenuItems = [
 ];
 
 export const doctorMenuItems = [
-  { link: "/patients", label: "Medical Record" },
+  { link: "/patients", label: "Patients" },
   { link: "/appointments", label: "Appointments" },
   { link: "/examinations", label: "Examinations" },
+  { link: "/corona-report", label: "Covid19 report" },
 ];
 
 export const nurseMenuItems = [
