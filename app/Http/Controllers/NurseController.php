@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 class NurseController extends Controller
 {
-    // 📌 Prikaz svih medicinskih sestara (samo admin)
     public function index(Request $request)
     {
         $admin = Auth::user();
@@ -47,7 +46,7 @@ class NurseController extends Controller
                 ->select('nurses.*');
         }
 
-        $nurses = $query->paginate($request->get('per_page', 15));
+        $nurses = $query->paginate($request->get('per_page', 8));
 
         return response()->json([
             'success' => true,
@@ -56,7 +55,6 @@ class NurseController extends Controller
         ]);
     }
 
-    // 📌 Detalji o jednoj medicinskoj sestri
     public function show($id)
     {
         $admin = Auth::user();

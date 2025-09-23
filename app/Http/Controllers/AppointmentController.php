@@ -172,21 +172,22 @@ class AppointmentController extends Controller
     private function formatAppointment(Appointment $appointment)
     {
         return [
-            'appointment_id'   => $appointment->id,
-            'patient'          => $appointment->medicalRecord->patient->user->name ?? 'Nepoznat',
-            'doctor'           => $appointment->doctor ? [
+            'appointment_id'    => $appointment->id,
+            'medical_record_id' => $appointment->medical_record_id, // 👈 DODATO
+            'patient'           => $appointment->medicalRecord->patient->user->name ?? 'Nepoznat',
+            'doctor'            => $appointment->doctor ? [
                 'id'             => $appointment->doctor->id,
                 'name'           => $appointment->doctor->user->name,
                 'specialization' => $appointment->doctor->specialization,
             ] : null,
-            'nurse'            => $appointment->nurse ? [
+            'nurse'             => $appointment->nurse ? [
                 'id'      => $appointment->nurse->id,
                 'user_id' => $appointment->nurse->user->id,
                 'name'    => $appointment->nurse->user->name,
                 'email'   => $appointment->nurse->user->email,
             ] : null,
-            'appointment_date' => $appointment->appointment_date,
-            'status'           => $appointment->status,
+            'appointment_date'  => $appointment->appointment_date,
+            'status'            => $appointment->status,
         ];
     }
 }

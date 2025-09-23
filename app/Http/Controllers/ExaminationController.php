@@ -106,7 +106,7 @@ class ExaminationController extends Controller
         $query->orderBy($sort, $direction);
 
         $examinations = $query->with(['medicalRecord.patient.user', 'doctors.user'])
-                              ->paginate($request->get('per_page', 15));
+                              ->paginate($request->get('per_page', 8));
 
         return response()->json([
             'success' => true,

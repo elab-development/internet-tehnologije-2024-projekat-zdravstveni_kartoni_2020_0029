@@ -12,6 +12,8 @@ use App\Http\Middleware\VerifyApiToken;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\NurseController;
+use App\Http\Controllers\CoronaController;
+
 
 Route::middleware("api.response")->group(function () {
     // Javne rute
@@ -19,6 +21,9 @@ Route::middleware("api.response")->group(function () {
     Route::post("/register", [RegisterController::class, "register"])->withoutMiddleware(["api"]);
     Route::post('/patients/register', [PatientController::class, 'store'])->withoutMiddleware(["api"]);
     Route::get("/doctors", [DoctorController::class, "index"])->withoutMiddleware(["api"]);
+    Route::get('/corona/regions', [CoronaController::class, 'regions']);
+    Route::get('/corona/report/{iso}', [CoronaController::class, 'report']);
+
 
     // Zaštićene rute
     Route::middleware(VerifyApiToken::class)->group(function () {
@@ -36,7 +41,7 @@ Route::middleware("api.response")->group(function () {
         Route::get("/medical-records/{id}", [MedicalRecordController::class, "show"]);
         Route::put("/medical-records/{id}", [MedicalRecordController::class, "update"]);
         //Route::get('/patients/{patientId}/medical-record-id',[MedicalRecordController::class, 'getByPatientId']);
-        Route::put('/medical-records/{id}', [MedicalRecordController::class, 'updateMedicalRecord']);
+        Route::put('/medical-records/{id}/update', [MedicalRecordController::class,'updateMedicalRecord']);
         Route::get('/medical-records/{id}/my', [MedicalRecordController::class, 'getMyMedicalRecordId']);
 
 

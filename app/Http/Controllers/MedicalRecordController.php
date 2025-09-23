@@ -30,12 +30,12 @@ class MedicalRecordController extends Controller
     }
 
     // 📌 Prikaz pojedinačnog kartona
-    public function show($medicalRecordId = null)
-    {
+    public function show($medicalRecordId = null) {
         $user = Auth::user();
 
         if ($user->isPatient() && !$medicalRecordId) {
             $patient = $user->patientProfile;
+
             $medicalRecord = MedicalRecord::with(['patient.user','doctor.user','examinations'])
                 ->where('patient_id', optional($patient)->id)
                 ->first();
@@ -50,6 +50,7 @@ class MedicalRecordController extends Controller
             return response()->json(['success' => true, 'data' => $medicalRecord]);
         }
 
+        // 📌 Uzimamo karton po ID-ju
         $medicalRecord = MedicalRecord::with(['patient.user','doctor.user','examinations'])
             ->find($medicalRecordId);
 
@@ -71,16 +72,28 @@ class MedicalRecordController extends Controller
             }
         } elseif ($user->isDoctor()) {
             $doctor = $user->doctorProfile;
-            if ($medicalRecord->doctor_id !== optional($doctor)->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Nemate pristup ovom kartonu'
-                ], 403);
+
+            // ✅ Ako je doktor direktno zadužen
+            if ($medicalRecord->doctor_id === optional($doctor)->id) {
+                // Dozvoljen pristup
+            } else {
+                // ✅ Ako je doktor imao zakazan appointment za ovaj karton
+                $hasAppointment = \App\Models\Appointment::where('medical_record_id', $medicalRecord->id)
+                    ->where('doctor_id', optional($doctor)->id)
+                    ->exists();
+
+                if (!$hasAppointment) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nemate pristup ovom kartonu'
+                    ], 403);
+                }
             }
         }
 
         return response()->json(['success' => true, 'data' => $medicalRecord]);
     }
+
 
     // 📌 Pacijent menja lekara
     public function getMyMedicalRecordId()
@@ -149,48 +162,51 @@ class MedicalRecordController extends Controller
     }
 
 
-    // 📌 Admin ili doktor ažurira karton
+   // 📌 Admin ili doktor ažurira karton
     public function updateMedicalRecord(Request $request, $id)
     {
         $medicalRecord = MedicalRecord::find($id);
         $user = Auth::user();
 
         if (!$medicalRecord) {
-            return response()->json(['success' => false, 'message' => 'Karton nije pronađen'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Karton nije pronađen'
+            ], 404);
         }
 
         // ✅ Provera ovlašćenja
-        if ($user->isDoctor()) {
-            $doctor = $user->doctorProfile;
-            if ($medicalRecord->doctor_id !== $doctor->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Nemate ovlašćenje za izmenu ovog kartona'
-                ], 403);
-            }
-        } elseif (!$user->isAdmin()) {
+        if ($user->isDoctor() && !$user->doctorProfile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doktor nema profil'
+            ], 403);
+        } elseif (!$user->isDoctor() && !$user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Samo lekar ili administrator mogu ažurirati karton'
             ], 403);
         }
 
-        // ✅ Validacija
+        // ✅ Validacija sa nullable → polja mogu biti prazna ili izostavljena
         $validated = $request->validate([
-            'blood_type' => 'sometimes|string|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-            'allergies' => 'sometimes|array',
-            'chronic_diseases' => 'sometimes|array',
-            'notes' => 'sometimes|string',
+            'blood_type'        => 'nullable|string|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
+            'allergies'         => 'nullable|array',
+            'chronic_diseases'  => 'nullable|array',
+            'notes'             => 'nullable|string',
         ]);
 
-        $medicalRecord->update($validated);
+        // ✅ Ažuriraj samo prosleđena polja
+        $medicalRecord->fill($validated)->save();
 
         return response()->json([
             'success' => true,
             'message' => 'Karton uspešno ažuriran',
-            'data' => $medicalRecord
+            'data'    => $medicalRecord->fresh()
         ]);
     }
+
+
 }
 
 
