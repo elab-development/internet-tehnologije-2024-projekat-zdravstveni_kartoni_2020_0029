@@ -1,12 +1,6 @@
 // src/components/nurses/NursesInfo.tsx
-import React, { useState } from "react";
-import {
-  Alert,
-  CircularProgress,
-  Box,
-  Typography,
-  Pagination,
-} from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { CircularProgress, Box, Typography, Pagination } from "@mui/material";
 import { useAuth } from "../../auth/useAuth";
 import { useNurses } from "./hooks/useNurse";
 import NurseFilters from "./NurseFilters";
@@ -14,6 +8,7 @@ import NursesTable from "./NursesTable";
 import DeleteNurseDialog from "./DeleteNurseDialog";
 import NurseUpdate from "./NurseUpdate";
 import Layout from "../layout/Layout";
+import { useNotification } from "../notifications/NotificationProvider";
 
 const Nurses = ({ onAddNurse }: { onAddNurse: () => void }) => {
   const { user } = useAuth();
@@ -40,12 +35,27 @@ const Nurses = ({ onAddNurse }: { onAddNurse: () => void }) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [nurseToEdit, setNurseToEdit] = useState<any>(null);
 
+  const { notify } = useNotification();
+
+  useEffect(() => {
+    if (error) {
+      notify(error, "error");
+    }
+  }, [error, notify]);
+
+  useEffect(() => {
+    if (successMsg) {
+      notify(successMsg, "success");
+    }
+  }, [successMsg, notify]);
+
   const handleEditClick = (nurse: any) => {
     setNurseToEdit(nurse);
     setEditDialogOpen(true);
   };
 
   const handleEditSuccess = () => {
+    notify("Sestra uspešno izmenjena", "success");
     setEditDialogOpen(false);
     setNurseToEdit(null);
   };
@@ -53,6 +63,14 @@ const Nurses = ({ onAddNurse }: { onAddNurse: () => void }) => {
   const handleEditCancel = () => {
     setEditDialogOpen(false);
     setNurseToEdit(null);
+  };
+
+  const handleDeleteSuccess = () => {
+    notify("Sestra uspešno obrisana", "success");
+  };
+
+  const handleDeleteError = () => {
+    notify("Greška prilikom brisanja sestre", "error");
   };
 
   if (loading) {
@@ -76,9 +94,6 @@ const Nurses = ({ onAddNurse }: { onAddNurse: () => void }) => {
   return (
     <Layout crumbs1={breadcrumbs}>
       <>
-        {successMsg && <Alert severity="success">{successMsg}</Alert>}
-        {error && <Alert severity="error">{error}</Alert>}
-
         <NurseFilters
           search={search}
           setSearch={setSearch}
@@ -90,7 +105,14 @@ const Nurses = ({ onAddNurse }: { onAddNurse: () => void }) => {
 
         <NursesTable
           nurses={nurses}
-          onDelete={handleDeleteClick}
+          onDelete={async (id) => {
+            try {
+              await handleDeleteClick(id);
+              handleDeleteSuccess();
+            } catch {
+              handleDeleteError();
+            }
+          }}
           onEdit={handleEditClick}
         />
 
@@ -109,7 +131,14 @@ const Nurses = ({ onAddNurse }: { onAddNurse: () => void }) => {
           open={deleteDialogOpen}
           nurseId={nurseToDelete}
           onCancel={handleDeleteCancel}
-          onConfirm={handleDeleteConfirm}
+          onConfirm={async () => {
+            try {
+              await handleDeleteConfirm();
+              handleDeleteSuccess();
+            } catch {
+              handleDeleteError();
+            }
+          }}
         />
 
         {nurseToEdit && (

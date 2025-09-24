@@ -7,11 +7,13 @@ import {
   Menu,
   MenuItem,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import { useNotification } from "../notifications/NotificationProvider"; // 👈 notifikacije
 
 type AppointmentCalendarProps = {
   records: {
@@ -36,8 +38,8 @@ type AppointmentCalendarProps = {
   updateAppointment: (
     id: number,
     data: { status?: string; doctor_id?: number }
-  ) => void;
-  deleteAppointment: (id: number) => void;
+  ) => Promise<void> | void;
+  deleteAppointment: (id: number) => Promise<void> | void;
   onSelectRecord: (recordId: number) => void;
 };
 
@@ -51,6 +53,8 @@ const AppointmentCalendar = ({
   const canDelete = user?.role === "admin" || user?.role === "nurse";
   const canEditStatus =
     user?.role === "admin" || user?.role === "nurse" || user?.role === "doctor";
+
+  const { notify } = useNotification(); // 👈 koristimo globalni notify
 
   // 📌 modal za brisanje
   const [openDialog, setOpenDialog] = useState(false);
@@ -73,9 +77,14 @@ const AppointmentCalendar = ({
     setOpenDialog(false);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedId !== null) {
-      deleteAppointment(selectedId);
+      try {
+        await deleteAppointment(selectedId);
+        notify("Termin uspešno obrisan", "success");
+      } catch {
+        notify("Greška prilikom brisanja termina", "error");
+      }
     }
     handleCloseDialog();
   };
@@ -114,22 +123,16 @@ const AppointmentCalendar = ({
         }}
         events={events}
         eventClick={(info) => {
-          const eventId = Number(info.event.id);
           const recordId = info.event.extendedProps.medical_record_id;
-
           if (recordId) {
             onSelectRecord(recordId);
-          }
-
-          if (canDelete) {
-            handleOpenDialog(eventId);
           }
         }}
         eventDidMount={(info) => {
           // desni klik (context menu)
           info.el.oncontextmenu = (e) => {
             e.preventDefault();
-            if (canEditStatus) {
+            if (canEditStatus || canDelete) {
               setContextMenu(
                 contextMenu === null
                   ? {
@@ -147,7 +150,7 @@ const AppointmentCalendar = ({
         height="80vh"
       />
 
-      {/* Context meni za promenu statusa */}
+      {/* Context meni za promenu statusa i brisanje */}
       <Menu
         open={contextMenu !== null}
         onClose={() => setContextMenu(null)}
@@ -158,36 +161,75 @@ const AppointmentCalendar = ({
             : undefined
         }
       >
-        <MenuItem
-          onClick={() => {
-            if (contextMenu?.eventId) {
-              updateAppointment(contextMenu.eventId, { status: "completed" });
-            }
-            setContextMenu(null);
-          }}
-        >
-          Completed
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            if (contextMenu?.eventId) {
-              updateAppointment(contextMenu.eventId, { status: "canceled" });
-            }
-            setContextMenu(null);
-          }}
-        >
-          Canceled
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            if (contextMenu?.eventId) {
-              updateAppointment(contextMenu.eventId, { status: "no_show" });
-            }
-            setContextMenu(null);
-          }}
-        >
-          No Show
-        </MenuItem>
+        {canEditStatus && (
+          <>
+            <MenuItem
+              onClick={async () => {
+                if (contextMenu?.eventId) {
+                  try {
+                    await updateAppointment(contextMenu.eventId, {
+                      status: "completed",
+                    });
+                    notify("Termin označen kao completed", "success");
+                  } catch {
+                    notify("Greška pri ažuriranju termina", "error");
+                  }
+                }
+                setContextMenu(null);
+              }}
+            >
+              Completed
+            </MenuItem>
+            <MenuItem
+              onClick={async () => {
+                if (contextMenu?.eventId) {
+                  try {
+                    await updateAppointment(contextMenu.eventId, {
+                      status: "canceled",
+                    });
+                    notify("Termin označen kao canceled", "success");
+                  } catch {
+                    notify("Greška pri ažuriranju termina", "error");
+                  }
+                }
+                setContextMenu(null);
+              }}
+            >
+              Canceled
+            </MenuItem>
+            <MenuItem
+              onClick={async () => {
+                if (contextMenu?.eventId) {
+                  try {
+                    await updateAppointment(contextMenu.eventId, {
+                      status: "no_show",
+                    });
+                    notify("Termin označen kao no show", "info");
+                  } catch {
+                    notify("Greška pri ažuriranju termina", "error");
+                  }
+                }
+                setContextMenu(null);
+              }}
+            >
+              No Show
+            </MenuItem>
+          </>
+        )}
+        {canDelete && (
+          <MenuItem
+            onClick={() => {
+              if (contextMenu?.eventId) {
+                handleOpenDialog(contextMenu.eventId); // otvori modal
+              }
+              setContextMenu(null);
+            }}
+            sx={{ color: "error.main" }}
+          >
+            <DeleteIcon fontSize="small" style={{ marginRight: 8 }} />
+            Obriši
+          </MenuItem>
+        )}
       </Menu>
 
       {/* Dialog za potvrdu brisanja */}

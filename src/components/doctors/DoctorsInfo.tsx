@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import {
-  Alert,
-  CircularProgress,
-  Box,
-  Typography,
-  Pagination,
-} from "@mui/material";
+import { CircularProgress, Box, Typography, Pagination } from "@mui/material";
 import { useAuth } from "../../auth/useAuth";
 import { useDoctors } from "./hooks/useDoctors";
 import DoctorFilters from "./DoctorFilters";
@@ -14,6 +8,7 @@ import DeleteDoctorDialog from "./DeleteDoctorDialog";
 import DoctorUpdate from "./DoctorUpdate";
 import Layout from "../layout/Layout";
 import PageWrapper from "../PageWrapper";
+import { useNotification } from "../notifications/NotificationProvider"; // 👈 koristi hook
 
 const Doctors = ({ onAddDoctor }: { onAddDoctor: () => void }) => {
   const { user } = useAuth();
@@ -22,6 +17,7 @@ const Doctors = ({ onAddDoctor }: { onAddDoctor: () => void }) => {
     loading,
     error,
     successMsg,
+    setSuccessMsg,
     page,
     setPage,
     totalPages,
@@ -42,12 +38,16 @@ const Doctors = ({ onAddDoctor }: { onAddDoctor: () => void }) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [doctorToEdit, setDoctorToEdit] = useState<any>(null);
 
+  // 👇 ubacujemo notify hook
+  const { notify } = useNotification();
+
   const handleEditClick = (doctor: any) => {
     setDoctorToEdit(doctor);
     setEditDialogOpen(true);
   };
 
   const handleEditSuccess = () => {
+    notify("Doktor uspešno izmenjen", "success");
     setEditDialogOpen(false);
     setDoctorToEdit(null);
   };
@@ -55,6 +55,14 @@ const Doctors = ({ onAddDoctor }: { onAddDoctor: () => void }) => {
   const handleEditCancel = () => {
     setEditDialogOpen(false);
     setDoctorToEdit(null);
+  };
+
+  const handleDeleteSuccess = () => {
+    notify("Doktor uspešno obrisan", "success");
+  };
+
+  const handleDeleteError = () => {
+    notify("Greška prilikom brisanja doktora", "error");
   };
 
   if (loading) {
@@ -70,13 +78,12 @@ const Doctors = ({ onAddDoctor }: { onAddDoctor: () => void }) => {
       </Box>
     );
   }
+
   const breadcrumbs: any[] = [{ label: "Doctors", view: "doctor" }];
+
   return (
     <Layout crumbs1={breadcrumbs}>
       <>
-        {successMsg && <Alert severity="success">{successMsg}</Alert>}
-        {error && <Alert severity="error">{error}</Alert>}
-
         <DoctorFilters
           search={search}
           setSearch={setSearch}
@@ -85,13 +92,22 @@ const Doctors = ({ onAddDoctor }: { onAddDoctor: () => void }) => {
           onAddDoctor={onAddDoctor}
           user={user}
         />
+
         <PageWrapper>
           <DoctorsTable
             doctors={doctors}
-            onDelete={handleDeleteClick}
+            onDelete={async (id) => {
+              try {
+                await handleDeleteClick(id);
+                handleDeleteSuccess();
+              } catch {
+                handleDeleteError();
+              }
+            }}
             onEdit={handleEditClick}
           />
         </PageWrapper>
+
         {totalPages > 1 && (
           <Box display="flex" justifyContent="center" mt={3}>
             <Pagination
@@ -109,7 +125,14 @@ const Doctors = ({ onAddDoctor }: { onAddDoctor: () => void }) => {
           newDoctorId={newDoctorId}
           setNewDoctorId={setNewDoctorId}
           onCancel={handleDeleteCancel}
-          onConfirm={handleDeleteConfirm}
+          onConfirm={async () => {
+            try {
+              await handleDeleteConfirm();
+              handleDeleteSuccess();
+            } catch {
+              handleDeleteError();
+            }
+          }}
         />
 
         {doctorToEdit && (

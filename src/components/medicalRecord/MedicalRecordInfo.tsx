@@ -11,10 +11,13 @@ import {
   Button,
   Chip,
 } from "@mui/material";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth"; // 👈 dodaj import
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
-import ExaminationsTable from "../examinations/ExaminationsTable"; // 👈 dodaj import
+import ExaminationsTable from "../examinations/ExaminationsTable";
+
+// 👇 importuj globalni sistem notifikacija
+import { useNotification } from "../notifications/NotificationProvider";
 
 type Props = {
   record: any;
@@ -52,8 +55,10 @@ const InfoRow = ({
 const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { notify } = useNotification();
 
   if (!record) {
+    notify("Nema podataka o kartonu", "warning");
     return (
       <Card sx={{ p: 3, textAlign: "center" }}>
         <Typography variant="h6" color="text.secondary">
@@ -92,19 +97,17 @@ const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
 
             <Stack direction="row" spacing={2}>
               {canEdit && (
-                <Button variant="outlined" color="primary" onClick={onEdit}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => {
+                    notify("Uređivanje kartona otvoreno", "info");
+                    onEdit();
+                  }}
+                >
                   Izmeni
                 </Button>
               )}
-              {/* <Button
-                variant="contained"
-                color="secondary"
-                onClick={() =>
-                  navigate(`/medical-records/${record.id}/examinations`)
-                }
-              >
-                Pregledi
-              </Button> */}
             </Stack>
           </Box>
 
@@ -248,9 +251,6 @@ const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
 
       {/* 👇 Pregledi ispod kartona */}
       <Box mt={4}>
-        {/* <Typography variant="h6" gutterBottom>
-          Pregledi pacijenta
-        </Typography> */}
         <ExaminationsTable
           examinations={record.examinations || []}
           loading={false}
@@ -259,8 +259,13 @@ const MedicalRecordInfo: React.FC<Props> = ({ record, onEdit }) => {
           page={1}
           setPage={() => {}}
           totalPages={1}
-          onDelete={() => {}}
-          onUpdate={async () => true}
+          onDelete={() => {
+            notify("Pregled obrisan", "success");
+          }}
+          onUpdate={async () => {
+            notify("Pregled izmenjen", "success");
+            return true;
+          }}
           medicalRecordId={record.id.toString()}
           userRole={user?.role}
         />

@@ -1,3 +1,4 @@
+// src/components/doctors/AddDoctor.tsx
 import React, { useState } from "react";
 import {
   Box,
@@ -6,26 +7,31 @@ import {
   Typography,
   MenuItem,
   Paper,
-  Alert,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { api } from "../../auth/api";
 import { useNavigate } from "react-router-dom";
 import Layout from "../layout/Layout";
+import { useNotification } from "../notifications/NotificationProvider";
 
 const AddDoctor = () => {
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     specialization: "",
     description: "",
   });
 
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const navigate = useNavigate();
+  const { notify } = useNotification();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -34,20 +40,32 @@ const AddDoctor = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setSuccess(null);
+
+    if (form.password !== form.confirmPassword) {
+      notify("Lozinke se ne poklapaju", "error");
+      setLoading(false);
+      return;
+    }
 
     try {
-      const res = await api.post("/doctors", form);
-      setSuccess("Doktor uspešno kreiran ✅");
-      console.log("Doctor created:", res.data);
+      const res = await api.post("/doctors", {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        specialization: form.specialization,
+        description: form.description,
+      });
 
-      // nakon uspeha vrati na listu doktora
+      console.log("Doctor created:", res.data);
+      notify("Doktor uspešno kreiran ✅", "success");
+
+      // preusmeri posle 1s
       setTimeout(() => navigate("/doctors"), 1000);
     } catch (err: any) {
       console.error("Greška prilikom dodavanja doktora:", err);
-      setError(
-        err.response?.data?.message || "Greška prilikom dodavanja doktora"
+      notify(
+        err.response?.data?.message || "Greška prilikom dodavanja doktora",
+        "error"
       );
     } finally {
       setLoading(false);
@@ -56,7 +74,7 @@ const AddDoctor = () => {
 
   const breadcrumbs = [
     { label: "Doctors", view: "doctors" },
-    { label: "new Doctor", view: "" },
+    { label: "New Doctor", view: "" },
   ];
 
   return (
@@ -92,18 +110,58 @@ const AddDoctor = () => {
               value={form.email}
               onChange={handleChange}
             />
+
+            {/* Password */}
             <TextField
               fullWidth
               required
-              type="password"
+              type={showPassword ? "text" : "password"}
               label="Password"
               name="password"
               margin="normal"
               value={form.password}
               onChange={handleChange}
               inputProps={{ minLength: 6 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
+            {/* Confirm Password */}
+            <TextField
+              fullWidth
+              required
+              type={showConfirmPassword ? "text" : "password"}
+              label="Confirm Password"
+              name="confirmPassword"
+              margin="normal"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              inputProps={{ minLength: 6 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            {/* Specialization */}
             <TextField
               select
               required
@@ -123,6 +181,7 @@ const AddDoctor = () => {
               )}
             </TextField>
 
+            {/* Description */}
             <TextField
               fullWidth
               label="Description"
@@ -145,24 +204,13 @@ const AddDoctor = () => {
               </Button>
               <Button
                 variant="outlined"
-                onClick={() => navigate("/doctors")} // 👈 cancel vodi na doctors
+                onClick={() => navigate("/doctors")}
                 fullWidth
                 disabled={loading}
               >
                 Cancel
               </Button>
             </Box>
-
-            {error && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {error}
-              </Alert>
-            )}
-            {success && (
-              <Alert severity="success" sx={{ mt: 2 }}>
-                {success}
-              </Alert>
-            )}
           </Box>
         </Paper>
       </Box>

@@ -3,7 +3,6 @@ import {
   Button,
   Box,
   Paper,
-  Typography,
   Link as MuiLink,
   Alert,
   CircularProgress,
@@ -12,7 +11,6 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../auth/useAuth";
 
-// ✅ Importuj logo
 import doctorLogo from "../assets/doctor_logo.png";
 
 export default function LoginForm() {
@@ -28,7 +26,7 @@ export default function LoginForm() {
 
     try {
       await loginWithCredentials(email, password);
-      // ✅ Redirect radi preko AuthProvider-a
+      navigate("/appointments"); // ✅ redirect na appointments
     } catch (err: any) {
       setError(err.message || "Došlo je do greške pri prijavi");
     }
@@ -52,17 +50,6 @@ export default function LoginForm() {
           borderRadius: 3,
         }}
       >
-        {/* <Typography
-          variant="h4"
-          component="h1"
-          sx={{
-            fontWeight: 600,
-            textAlign: "center",
-            mb: 3,
-          }}
-        >
-          Login
-        </Typography> */}
         {/* LOGO */}
         <Box display="flex" justifyContent="center" mb={2}>
           <img

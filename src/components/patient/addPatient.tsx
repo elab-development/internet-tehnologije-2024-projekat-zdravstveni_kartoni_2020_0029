@@ -7,8 +7,10 @@ import {
   MenuItem,
   Paper,
   Autocomplete,
-  Alert,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useDoctors } from "../doctors/hooks/useDoctors";
 import { usePatients } from "./hooks/usePatients";
 import { useNavigate } from "react-router-dom";
@@ -22,19 +24,23 @@ const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 const AddPatient = ({ onSuccess }: Props) => {
   const { doctors, setSearch } = useDoctors();
-  const { addPatient, loading, error, successMsg } = usePatients();
-  const navigate = useNavigate(); // 👈 inicijalizacija
+  const { addPatient, loading } = usePatients();
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     jmbg: "",
     date_of_birth: "",
     gender: "",
     doctor_id: "",
     blood_type: "",
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -43,6 +49,11 @@ const AddPatient = ({ onSuccess }: Props) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (form.password !== form.confirmPassword) {
+      alert("❌ Passwords do not match!");
+      return;
+    }
+
     await addPatient({
       ...form,
       doctor_id: form.doctor_id ? Number(form.doctor_id) : undefined,
@@ -50,10 +61,10 @@ const AddPatient = ({ onSuccess }: Props) => {
       gender: form.gender as "male" | "female" | "other",
     });
 
-    if (!error) {
-      onSuccess();
-    }
+    onSuccess();
+    navigate("/patients");
   };
+
   const breadcrumbs = [
     { label: "Patients", view: "patients" },
     { label: "new Patient", view: "" },
@@ -92,17 +103,59 @@ const AddPatient = ({ onSuccess }: Props) => {
               value={form.email}
               onChange={handleChange}
             />
+
+            {/* Password */}
             <TextField
               fullWidth
               required
-              type="password"
+              type={showPassword ? "text" : "password"}
               label="Password"
               name="password"
               margin="normal"
               value={form.password}
               onChange={handleChange}
               inputProps={{ minLength: 8 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
+
+            {/* Confirm Password */}
+            <TextField
+              fullWidth
+              required
+              type={showConfirmPassword ? "text" : "password"}
+              label="Confirm Password"
+              name="confirmPassword"
+              margin="normal"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              inputProps={{ minLength: 8 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
             <TextField
               fullWidth
               required
@@ -190,25 +243,13 @@ const AddPatient = ({ onSuccess }: Props) => {
               </Button>
               <Button
                 variant="outlined"
-                onClick={() => navigate("/patients")} // 👈 vraća na listu pacijenata
+                onClick={() => navigate("/patients")}
                 fullWidth
                 disabled={loading}
               >
                 Cancel
               </Button>
             </Box>
-
-            {/* Error & Success */}
-            {error && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {error}
-              </Alert>
-            )}
-            {successMsg && (
-              <Alert severity="success" sx={{ mt: 2 }}>
-                {successMsg}
-              </Alert>
-            )}
           </Box>
         </Paper>
       </Box>

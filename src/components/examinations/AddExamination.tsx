@@ -1,16 +1,11 @@
+// src/components/examinations/AddExamination.tsx
 import React, { useState } from "react";
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  Alert,
-} from "@mui/material";
+import { Box, TextField, Button, Typography, Paper } from "@mui/material";
 import { useAuth } from "../../auth/useAuth";
 import { useNavigate, useParams } from "react-router-dom";
 import Layout from "../layout/Layout";
 import { useExaminations } from "./hooks/useExaminations";
+import { useNotification } from "../notifications/NotificationProvider";
 
 type Props = {
   onSuccess?: () => void;
@@ -20,18 +15,17 @@ const AddExamination: React.FC<Props> = ({ onSuccess }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { medicalRecordId } = useParams<{ medicalRecordId: string }>();
-
   const { addExamination, loading, error, fetchExaminations } = useExaminations(
     medicalRecordId ? Number(medicalRecordId) : null
   );
+
+  const { notify } = useNotification();
 
   const [form, setForm] = useState({
     symptom_description: "",
     diagnosis: "",
     therapy: "",
   });
-
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -41,7 +35,7 @@ const AddExamination: React.FC<Props> = ({ onSuccess }) => {
     e.preventDefault();
 
     if (!medicalRecordId) {
-      alert("❌ Medical record ID is missing");
+      notify("Medical record ID is missing", "error");
       return;
     }
 
@@ -53,15 +47,16 @@ const AddExamination: React.FC<Props> = ({ onSuccess }) => {
     });
 
     if (success) {
-      setSuccessMsg("✅ Examination successfully created!");
-      fetchExaminations(); // refresh liste
+      notify("Examination successfully created!", "success");
+      fetchExaminations();
 
       if (onSuccess) onSuccess();
 
-      // posle kratkog delay prebacuje na listu pregleda
       setTimeout(() => {
         navigate(`/medical-records/${medicalRecordId}/examinations`);
       }, 1500);
+    } else if (error) {
+      notify(error, "error");
     }
   };
 
@@ -161,18 +156,6 @@ const AddExamination: React.FC<Props> = ({ onSuccess }) => {
                 Cancel
               </Button>
             </Box>
-
-            {error && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {error}
-              </Alert>
-            )}
-
-            {successMsg && (
-              <Alert severity="success" sx={{ mt: 2 }}>
-                {successMsg}
-              </Alert>
-            )}
           </Box>
         </Paper>
       </Box>

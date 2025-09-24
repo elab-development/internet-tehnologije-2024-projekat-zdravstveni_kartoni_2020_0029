@@ -1,16 +1,16 @@
 import React, { useEffect } from "react";
-import { Box, CircularProgress, Paper, Alert } from "@mui/material";
+import { Box, CircularProgress } from "@mui/material";
 import { useParams } from "react-router-dom";
 import { useExaminations } from "./hooks/useExaminations";
 import ExaminationsTable from "./ExaminationsTable";
 import Layout from "../layout/Layout";
 import { useAuth } from "../../auth/useAuth";
 import PageWrapper from "../PageWrapper";
+import { useNotification } from "../notifications/NotificationProvider";
 
 const ExaminationInfo: React.FC = () => {
   const { medicalRecordId } = useParams<{ medicalRecordId?: string }>();
 
-  // Ako parametar nije definisan ili nije validan broj → tretiraj ga kao null
   const recordId =
     medicalRecordId && !isNaN(Number(medicalRecordId))
       ? Number(medicalRecordId)
@@ -25,15 +25,24 @@ const ExaminationInfo: React.FC = () => {
     setPage,
     totalPages,
     fetchExaminations,
-    updateExamination, // ✅ sada koristimo hook
+    updateExamination,
     deleteExamination,
-  } = useExaminations(medicalRecordId ? Number(medicalRecordId) : null);
+  } = useExaminations(recordId);
+
+  const { user } = useAuth();
+  const { notify } = useNotification();
 
   useEffect(() => {
     fetchExaminations();
   }, [page, fetchExaminations]);
 
-  const { user } = useAuth();
+  useEffect(() => {
+    if (error) notify(error, "error");
+  }, [error, notify]);
+
+  useEffect(() => {
+    if (successMsg) notify(successMsg, "success");
+  }, [successMsg, notify]);
 
   const breadcrumbs =
     recordId !== null
@@ -64,30 +73,25 @@ const ExaminationInfo: React.FC = () => {
           </Box>
         )}
 
-        {error && (
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <Alert severity="error">{error}</Alert>
-          </Paper>
-        )}
-
-        {successMsg && (
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <Alert severity="success">{successMsg}</Alert>
-          </Paper>
-        )}
-
         {!loading && !error && (
           <PageWrapper>
             <ExaminationsTable
               examinations={examinations}
               loading={loading}
-              error={error}
-              successMsg={successMsg}
+              error={null}
+              successMsg={null}
               page={page}
               setPage={setPage}
               totalPages={totalPages}
-              onUpdate={updateExamination}
-              onDelete={deleteExamination}
+              onUpdate={async (id, data) => {
+                const success = await updateExamination(id, data);
+                if (success) notify("Pregled uspešno izmenjen");
+                return success;
+              }}
+              onDelete={async (id) => {
+                await deleteExamination(id);
+                notify("Pregled uspešno obrisan", "success");
+              }}
               medicalRecordId={medicalRecordId}
               userRole={user?.role}
             />
