@@ -29,8 +29,6 @@ class VerifyApiToken
         }
 
         $tokenData = Cache::get('auth_token_' . $token);
-
-        // 🚨 Guard: ako nema tokena ili fali user_id u podacima
         if (!$tokenData || !isset($tokenData['user_id'])) {
             return response()->json([
                 'success' => false,

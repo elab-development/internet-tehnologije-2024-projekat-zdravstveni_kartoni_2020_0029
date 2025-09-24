@@ -15,14 +15,11 @@ class ApiResponseMiddleware
         try {
             $response = $next($request);
 
-            // Preskoči za greške (4xx, 5xx)
             if (!$response->isSuccessful()) {
                 return $response;
             }
 
             $original = $response->original ?? null;
-
-            // Ako je već u formatu { success: true/false, data: ... } -> ne pakuj ponovo
             if (
                 is_array($original) &&
                 array_key_exists('success', $original) &&
@@ -30,8 +27,6 @@ class ApiResponseMiddleware
             ) {
                 return response()->json($original, $response->getStatusCode());
             }
-
-            // Inače spakuj u { success, data }
             return response()->json([
                 'success' => true,
                 'data'    => $original,

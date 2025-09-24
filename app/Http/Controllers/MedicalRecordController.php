@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Auth;
 
 class MedicalRecordController extends Controller
 {
-    // 📌 Prikaz svih zdravstvenih kartona za lekara
     public function index()
     {
         $user = Auth::user();
@@ -29,7 +28,6 @@ class MedicalRecordController extends Controller
         ], 403);
     }
 
-    // 📌 Prikaz pojedinačnog kartona
     public function show($medicalRecordId = null) {
         $user = Auth::user();
 
@@ -50,7 +48,6 @@ class MedicalRecordController extends Controller
             return response()->json(['success' => true, 'data' => $medicalRecord]);
         }
 
-        // 📌 Uzimamo karton po ID-ju
         $medicalRecord = MedicalRecord::with(['patient.user','doctor.user','examinations'])
             ->find($medicalRecordId);
 
@@ -61,7 +58,6 @@ class MedicalRecordController extends Controller
             ], 404);
         }
 
-        // 🔒 Provera pristupa
         if ($user->isPatient()) {
             $patient = $user->patientProfile;
             if ($medicalRecord->patient_id !== optional($patient)->id) {
@@ -72,12 +68,8 @@ class MedicalRecordController extends Controller
             }
         } elseif ($user->isDoctor()) {
             $doctor = $user->doctorProfile;
-
-            // ✅ Ako je doktor direktno zadužen
             if ($medicalRecord->doctor_id === optional($doctor)->id) {
-                // Dozvoljen pristup
             } else {
-                // ✅ Ako je doktor imao zakazan appointment za ovaj karton
                 $hasAppointment = \App\Models\Appointment::where('medical_record_id', $medicalRecord->id)
                     ->where('doctor_id', optional($doctor)->id)
                     ->exists();
@@ -94,13 +86,10 @@ class MedicalRecordController extends Controller
         return response()->json(['success' => true, 'data' => $medicalRecord]);
     }
 
-
-    // 📌 Pacijent menja lekara
     public function getMyMedicalRecordId()
         {
         $user = Auth::user();
 
-        // 🧑‍⚕️ Ako je pacijent - ne koristi medicalRecordId već user_id → patientProfile
         if ($user->isPatient()) {
             $patient = $user->patientProfile;
 
@@ -122,7 +111,6 @@ class MedicalRecordController extends Controller
                 ], 404);
             }
 
-            // 🔹 Pacijentu vraćamo ceo karton
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -131,7 +119,6 @@ class MedicalRecordController extends Controller
             ]);
         }
 
-        // 🧑‍⚕️ Doktor / admin traže karton po ID-ju
         $medicalRecord = MedicalRecord::with(['patient.user','doctor.user','examinations'])
             ->find($medicalRecordId);
 
@@ -142,7 +129,6 @@ class MedicalRecordController extends Controller
             ], 404);
         }
 
-        // 🔒 Ako je doktor → provera da li je njegov pacijent
         if ($user->isDoctor()) {
             $doctor = $user->doctorProfile;
             if ($medicalRecord->doctor_id !== optional($doctor)->id) {
@@ -153,7 +139,6 @@ class MedicalRecordController extends Controller
             }
         }
 
-        // 🔹 Admin dobija uvek (nema restrikcija)
 
         return response()->json([
             'success' => true,
@@ -162,7 +147,6 @@ class MedicalRecordController extends Controller
     }
 
 
-   // 📌 Admin ili doktor ažurira karton
     public function updateMedicalRecord(Request $request, $id)
     {
         $medicalRecord = MedicalRecord::find($id);
@@ -175,7 +159,6 @@ class MedicalRecordController extends Controller
             ], 404);
         }
 
-        // ✅ Provera ovlašćenja
         if ($user->isDoctor() && !$user->doctorProfile) {
             return response()->json([
                 'success' => false,
@@ -188,7 +171,6 @@ class MedicalRecordController extends Controller
             ], 403);
         }
 
-        // ✅ Validacija sa nullable → polja mogu biti prazna ili izostavljena
         $validated = $request->validate([
             'blood_type'        => 'nullable|string|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
             'allergies'         => 'nullable|array',
@@ -196,7 +178,6 @@ class MedicalRecordController extends Controller
             'notes'             => 'nullable|string',
         ]);
 
-        // ✅ Ažuriraj samo prosleđena polja
         $medicalRecord->fill($validated)->save();
 
         return response()->json([

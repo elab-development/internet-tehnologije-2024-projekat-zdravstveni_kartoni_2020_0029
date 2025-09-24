@@ -11,7 +11,6 @@ class RedirectIfAuthenticated
     public function handle($request, Closure $next, $guard = null): Response
     {
         if (Auth::guard($guard)->check()) {
-            // API odgovor umesto redirecta
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'success' => false,

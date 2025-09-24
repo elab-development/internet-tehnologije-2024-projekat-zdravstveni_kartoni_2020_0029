@@ -11,14 +11,12 @@ use Illuminate\Support\Facades\Validator;
 
 class PatientController extends Controller
 {
-    // 📌 Prikaz svih pacijenata
     public function index(Request $request)
     {
         $user = Auth::user();
         $search = $request->query('search');
         $perPage = $request->query('per_page', 8);
 
-        // ADMIN → svi pacijenti
         if ($user->isAdmin()) {
             $patients = Patient::with('user', 'medicalRecord.doctor.user')
                 ->when($search, fn($query) =>
@@ -34,7 +32,6 @@ class PatientController extends Controller
             ]);
         }
 
-        // DOCTOR → samo njegovi pacijenti
         if ($user->isDoctor()) {
             $doctor = $user->doctorProfile;
 
@@ -55,7 +52,6 @@ class PatientController extends Controller
             ]);
         }
 
-        // NURSE → svi pacijenti
         if ($user->isNurse()) {
             $patients = Patient::with('user', 'medicalRecord.doctor.user')
                 ->when($search, fn($query) =>
@@ -71,7 +67,6 @@ class PatientController extends Controller
             ]);
         }
 
-        // PATIENT → samo svoj nalog
         if ($user->isPatient()) {
             $patient = $user->patientProfile;
 
@@ -91,9 +86,6 @@ class PatientController extends Controller
         ], 403);
     }
 
-
-
-    // 📌 Prikaz pojedinačnog pacijenta
     public function show($id)
     {
         $patient = Patient::with(['user', 'medicalRecord.doctor.user'])->find($id);
@@ -126,12 +118,10 @@ class PatientController extends Controller
         return $patient;
     }
 
-    // 📌 Kreiranje pacijenta (self-registration ili admin/doktor)
     public function store(Request $request)
     {
         $authUser = Auth::user();
 
-        // 🔹 Self-registration (nema Auth user-a)
         if (!$authUser) {
             $validator = Validator::make($request->all(), [
                 'name'          => 'required|string|max:255',
@@ -182,7 +172,6 @@ class PatientController extends Controller
             ], 201);
         }
 
-        // 🔹 Ako je Auth user → samo admin ili doktor
         if (!in_array($authUser->role, ['admin', 'doctor'])) {
             return response()->json([
                 'success' => false,
@@ -242,7 +231,6 @@ class PatientController extends Controller
         ], 201);
     }
 
-    // 📌 Update pacijenta
     public function updatePatient(Request $request, $id)
     {
         $patient = Patient::find($id);
@@ -277,7 +265,6 @@ class PatientController extends Controller
         return response()->json(['success' => true, 'data' => $patient->load('user')]);
     }
 
-    // 📌 Brisanje pacijenta
     public function deletePatient($id)
     {
         $patient = Patient::find($id);
@@ -303,7 +290,6 @@ class PatientController extends Controller
         return response()->json(['success' => true, 'message' => 'Pacijent je uspešno obrisan']);
     }
 
-    // 📌 Pacijenti određenog lekara
     public function getPatientsByDoctor(Request $request)
     {
         $user = Auth::user();

@@ -106,7 +106,7 @@ class DoctorController extends Controller
         $newUser = \App\Models\User::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
-            'password' => bcrypt($validated['password']), // enkripcija lozinke
+            'password' => bcrypt($validated['password']), 
             'role'     => 'doctor',
         ]);
 

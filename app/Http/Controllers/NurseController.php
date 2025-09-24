@@ -81,7 +81,6 @@ class NurseController extends Controller
         ]);
     }
 
-    // 📌 Kreiranje nove medicinske sestre
     public function store(Request $request)
     {
         $admin = Auth::user();
@@ -121,7 +120,6 @@ class NurseController extends Controller
         ], 201);
     }
 
-    // 📌 Izmena medicinske sestre
     public function updateNurse(Request $request, $id)
     {
         $admin = Auth::user();
@@ -164,7 +162,6 @@ class NurseController extends Controller
         ]);
     }
 
-    // 📌 Brisanje medicinske sestre
     public function deleteNurse(Request $request, $id)
     {
         $admin = Auth::user();
@@ -194,7 +191,6 @@ class NurseController extends Controller
         ]);
     }
 
-    // 📌 Menjanje šifre
     public function updateNursePassword(Request $request, $id)
     {
         $admin = Auth::user();

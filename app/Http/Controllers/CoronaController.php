@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class CoronaController extends Controller
 {
-    // 📌 Lista država
+    // Lista država
     public function regions()
     {
         $resp = Http::get('https://covid-api.com/api/regions?per_page=200');
@@ -16,12 +16,12 @@ class CoronaController extends Controller
         return response()->json([
             'success' => true,
             'data' => $regions
-        ]);
+        ]); 
     }
 
 
 
-    // 📌 Live podaci za konkretnu državu i datum
+    // Live podaci za konkretnu državu i datum
     public function report(Request $request, $iso)
     {
         $date = $request->query('date'); // format YYYY-MM-DD
