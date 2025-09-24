@@ -2,12 +2,12 @@ import { useState, useCallback, useEffect } from "react";
 import { api } from "../../../auth/api";
 import { useDebounce } from "use-debounce";
 
-// Tipizovan appointment
 export interface AppointmentRecord {
   appointment_id: number;
   patient: string;
   appointment_date: string;
   status: string;
+  medical_record_id: number;
   doctor?: {
     id: number;
     name: string;
@@ -171,8 +171,6 @@ export const useAppointment = () => {
     addAppointment,
     updateAppointment,
     deleteAppointment,
-
-    // filteri
     patientSearch,
     setPatientSearch,
     doctorSearch,
