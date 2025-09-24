@@ -1,19 +1,13 @@
 import { useEffect } from "react";
-import {
-  Typography,
-  Box,
-  CircularProgress,
-  Alert,
-  Snackbar,
-} from "@mui/material";
+import { Typography, Box, CircularProgress } from "@mui/material";
 import { useAppointment } from "./hooks/useAppointment";
 import { useAuth } from "../../auth/useAuth";
 import Layout from "../layout/Layout";
-// import AppointmentTable from "./AppointmentTable"; // ❌ uklonili smo tabelu
-import AppointmentCalendar from "./AppointmentCalendar"; // ✅ novi kalendar
+import AppointmentCalendar from "./AppointmentCalendar";
 import AppointmentFilters from "./AppointmentFilter";
 import PageWrapper from "../PageWrapper";
 import { useNavigate } from "react-router-dom";
+import { useNotification } from "../notifications/NotificationProvider"; // 👈 importujemo hook
 
 type Props = {
   onAddAppointment: () => void;
@@ -22,6 +16,7 @@ type Props = {
 const AppointmentInfo = ({ onAddAppointment }: Props) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { notify } = useNotification(); // 👈 hook za notifikacije
 
   const {
     appointments: records,
@@ -40,6 +35,18 @@ const AppointmentInfo = ({ onAddAppointment }: Props) => {
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
+
+  useEffect(() => {
+    if (error) {
+      notify(error, "error");
+    }
+  }, [error, notify]);
+
+  useEffect(() => {
+    if (successMsg) {
+      notify(successMsg, "success");
+    }
+  }, [successMsg, notify]);
 
   const breadcrumbs = [{ label: "Appointments", view: "appointments" }];
 
@@ -64,27 +71,27 @@ const AppointmentInfo = ({ onAddAppointment }: Props) => {
           </Box>
         )}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {successMsg && (
-          <Snackbar
-            open={!!successMsg}
-            autoHideDuration={4000}
-            message={successMsg}
-          />
-        )}
-
         {!loading && records.length > 0 && (
           <PageWrapper>
             <AppointmentCalendar
               records={records}
               user={user}
-              updateAppointment={updateAppointment}
-              deleteAppointment={deleteAppointment}
+              updateAppointment={async (id, data) => {
+                try {
+                  await updateAppointment(id, data);
+                  notify("Termin uspešno ažuriran", "success");
+                } catch {
+                  notify("Greška prilikom ažuriranja termina", "error");
+                }
+              }}
+              deleteAppointment={async (id) => {
+                try {
+                  await deleteAppointment(id);
+                  notify("Termin uspešno obrisan", "success");
+                } catch {
+                  notify("Greška prilikom brisanja termina", "error");
+                }
+              }}
               onSelectRecord={handleSelectRecord}
             />
           </PageWrapper>

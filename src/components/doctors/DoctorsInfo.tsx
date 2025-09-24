@@ -8,7 +8,7 @@ import DeleteDoctorDialog from "./DeleteDoctorDialog";
 import DoctorUpdate from "./DoctorUpdate";
 import Layout from "../layout/Layout";
 import PageWrapper from "../PageWrapper";
-import { useNotification } from "../notifications/NotificationProvider"; // 👈 koristi hook
+import { useNotification } from "../notifications/NotificationProvider";
 
 const Doctors = ({ onAddDoctor }: { onAddDoctor: () => void }) => {
   const { user } = useAuth();

@@ -12,7 +12,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // učitaj snapshot iz localStorage pri mountu
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -24,7 +23,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // potvrdi sesiju sa backendom ako token postoji
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -54,7 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  // LOGIN
   async function loginWithCredentials(email: string, password: string) {
     setLoading(true);
     try {
@@ -75,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
   }
 
-  // REFRESH
   async function refreshUser() {
     try {
       const me = await meRequest();
@@ -94,7 +90,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // LOGOUT
   async function logout() {
     try {
       await logoutRequest();

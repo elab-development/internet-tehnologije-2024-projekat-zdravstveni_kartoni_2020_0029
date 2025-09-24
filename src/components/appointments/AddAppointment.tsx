@@ -54,7 +54,6 @@ const AddAppointment = ({ onSuccess }: Props) => {
     status: "scheduled",
   });
 
-  // Ako nije admin ili nurse → nema pristup formi
   useEffect(() => {
     if (user && user.role !== "admin" && user.role !== "nurse") {
       navigate("/appointments");
@@ -173,7 +172,6 @@ const AddAppointment = ({ onSuccess }: Props) => {
           </Typography>
 
           <Box component="form" onSubmit={handleSubmit}>
-            {/* Pacijent */}
             <Autocomplete
               options={patients}
               getOptionLabel={(option: any) =>
@@ -209,7 +207,6 @@ const AddAppointment = ({ onSuccess }: Props) => {
               )}
             />
 
-            {/* Doktor */}
             <Autocomplete
               options={doctors}
               getOptionLabel={(option: any) =>
@@ -245,7 +242,6 @@ const AddAppointment = ({ onSuccess }: Props) => {
               )}
             />
 
-            {/* Zaključano polje */}
             <TextField
               label="Scheduled At"
               name="scheduled_at"

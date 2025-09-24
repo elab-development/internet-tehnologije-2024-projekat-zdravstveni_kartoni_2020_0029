@@ -26,7 +26,7 @@ export default function LoginForm() {
 
     try {
       await loginWithCredentials(email, password);
-      navigate("/appointments"); // ✅ redirect na appointments
+      navigate("/appointments");
     } catch (err: any) {
       setError(err.message || "Došlo je do greške pri prijavi");
     }

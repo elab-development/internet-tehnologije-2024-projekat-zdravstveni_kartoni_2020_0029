@@ -105,7 +105,7 @@ const ExaminationsTable: React.FC<Props> = ({
                   `/medical-records/${medicalRecordId}/examinations/add`
                 );
               } else {
-                navigate(`/examinations/add`); // 👈 globalna ruta kada nije vezan za karton
+                navigate(`/examinations/add`); 
               }
             }}
           />

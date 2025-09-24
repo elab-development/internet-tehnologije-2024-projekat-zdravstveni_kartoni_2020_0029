@@ -41,7 +41,7 @@ const AppointmentTable = ({
   const canEditStatus =
     user?.role === "admin" || user?.role === "nurse" || user?.role === "doctor";
 
-  // 📌 Lokalna paginacija
+  //Lokalna paginacija
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
@@ -50,7 +50,7 @@ const AppointmentTable = ({
     page * rowsPerPage
   );
 
-  // 📌 Confirm dialog state
+  //Confirm dialog state
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 

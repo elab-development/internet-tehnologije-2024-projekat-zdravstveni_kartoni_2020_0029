@@ -140,8 +140,8 @@ export const useDoctors = () => {
     loading,
     error,
     successMsg,
-    setSuccessMsg, // <--- Dodato
-    fetchDoctors, // <--- Dodato
+    setSuccessMsg,
+    fetchDoctors,
     page,
     setPage,
     totalPages,
